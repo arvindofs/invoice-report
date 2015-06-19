@@ -15,8 +15,7 @@ public class DataCache {
 
 
   public Map<String, ClientAccount> clientAccountCache = Collections.synchronizedMap(new WeakHashMap<String, ClientAccount>());
-//  Map<String, Employee> employeeCache = Collections.synchronizedMap(new WeakHashMap<String, Employee>());
-  Map<String, Project> projectCache = Collections.synchronizedMap(new WeakHashMap<String, Project>());
+  public Map<String, Project> projectCache = Collections.synchronizedMap(new WeakHashMap<String, Project>());
 
   public ClientAccount getClient(String name) {
     return clientAccountCache.get(name);
@@ -27,16 +26,6 @@ public class DataCache {
     clientAccountCache.put(clientAccount.name, clientAccount);
     return clientAccount;
   }
-
-//  public Employee getEmployee(String firstName, String lastName) {
-//    return employeeCache.get(String.format("%s.%s", firstName, lastName));
-//  }
-//
-//  public Employee addEmployee(String firstName, String lastName) {
-//    Employee employee = new Employee(firstName, lastName);
-//    employeeCache.put(String.format("%s.%s", employee.firstName, employee.lastName), employee);
-//    return employee;
-//  }
 
   public Project getProject(String name) {
     return projectCache.get(name);

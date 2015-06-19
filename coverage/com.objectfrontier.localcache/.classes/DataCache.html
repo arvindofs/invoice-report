@@ -89,45 +89,34 @@
 <i>15</i>&nbsp;
 <i>16</i>&nbsp;
 <b class="fc"><i>17</i>&nbsp;  public Map&lt;String, ClientAccount&gt; clientAccountCache = Collections.synchronizedMap(new WeakHashMap&lt;String, ClientAccount&gt;());</b>
-<i>18</i>&nbsp;//  Map&lt;String, Employee&gt; employeeCache = Collections.synchronizedMap(new WeakHashMap&lt;String, Employee&gt;());
-<b class="fc"><i>19</i>&nbsp;  Map&lt;String, Project&gt; projectCache = Collections.synchronizedMap(new WeakHashMap&lt;String, Project&gt;());</b>
-<i>20</i>&nbsp;
-<i>21</i>&nbsp;  public ClientAccount getClient(String name) {
-<b class="fc"><i>22</i>&nbsp;    return clientAccountCache.get(name);</b>
-<i>23</i>&nbsp;  }
-<i>24</i>&nbsp;
-<i>25</i>&nbsp;  public ClientAccount addClient(String  name) {
-<b class="fc"><i>26</i>&nbsp;    ClientAccount clientAccount = new ClientAccount(name);</b>
-<b class="fc"><i>27</i>&nbsp;    clientAccountCache.put(clientAccount.name, clientAccount);</b>
-<b class="fc"><i>28</i>&nbsp;    return clientAccount;</b>
-<i>29</i>&nbsp;  }
-<i>30</i>&nbsp;
-<i>31</i>&nbsp;//  public Employee getEmployee(String firstName, String lastName) {
-<i>32</i>&nbsp;//    return employeeCache.get(String.format(&quot;%s.%s&quot;, firstName, lastName));
-<i>33</i>&nbsp;//  }
-<i>34</i>&nbsp;//
-<i>35</i>&nbsp;//  public Employee addEmployee(String firstName, String lastName) {
-<i>36</i>&nbsp;//    Employee employee = new Employee(firstName, lastName);
-<i>37</i>&nbsp;//    employeeCache.put(String.format(&quot;%s.%s&quot;, employee.firstName, employee.lastName), employee);
-<i>38</i>&nbsp;//    return employee;
-<i>39</i>&nbsp;//  }
-<i>40</i>&nbsp;
-<i>41</i>&nbsp;  public Project getProject(String name) {
-<b class="fc"><i>42</i>&nbsp;    return projectCache.get(name);</b>
-<i>43</i>&nbsp;  }
-<i>44</i>&nbsp;
-<i>45</i>&nbsp;  public Project addProject(String code) {
-<b class="fc"><i>46</i>&nbsp;    Project project = new Project(code);</b>
-<b class="fc"><i>47</i>&nbsp;    projectCache.put(code, project);</b>
-<b class="fc"><i>48</i>&nbsp;    return project;</b>
-<i>49</i>&nbsp;  }
-<i>50</i>&nbsp;}
+<b class="fc"><i>18</i>&nbsp;  public Map&lt;String, Project&gt; projectCache = Collections.synchronizedMap(new WeakHashMap&lt;String, Project&gt;());</b>
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;  public ClientAccount getClient(String name) {
+<b class="fc"><i>21</i>&nbsp;    return clientAccountCache.get(name);</b>
+<i>22</i>&nbsp;  }
+<i>23</i>&nbsp;
+<i>24</i>&nbsp;  public ClientAccount addClient(String  name) {
+<b class="fc"><i>25</i>&nbsp;    ClientAccount clientAccount = new ClientAccount(name);</b>
+<b class="fc"><i>26</i>&nbsp;    clientAccountCache.put(clientAccount.name, clientAccount);</b>
+<b class="fc"><i>27</i>&nbsp;    return clientAccount;</b>
+<i>28</i>&nbsp;  }
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;  public Project getProject(String name) {
+<b class="fc"><i>31</i>&nbsp;    return projectCache.get(name);</b>
+<i>32</i>&nbsp;  }
+<i>33</i>&nbsp;
+<i>34</i>&nbsp;  public Project addProject(String code) {
+<b class="fc"><i>35</i>&nbsp;    Project project = new Project(code);</b>
+<b class="fc"><i>36</i>&nbsp;    projectCache.put(code, project);</b>
+<b class="fc"><i>37</i>&nbsp;    return project;</b>
+<i>38</i>&nbsp;  }
+<i>39</i>&nbsp;}
 </div>
 </div>
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2015-06-19 18:36</div>
+    <div style="float:right;">generated on 2015-06-19 18:43</div>
 </div>
 </body>
 </html>

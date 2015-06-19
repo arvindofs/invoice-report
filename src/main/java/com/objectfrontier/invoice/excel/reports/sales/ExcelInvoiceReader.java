@@ -206,7 +206,7 @@ public class ExcelInvoiceReader {
     billing.endDate = getDate(getCurrentRow(), RESOURCE_END_DATE_COL_INDEX);
     billing.billableDays = getNumeric(getCurrentRow(), RESOURCE_NUM_DAYS_WORKED_COL_INDEX);
     billing.startDate = getDate(getCurrentRow(), RESOURCE_START_DATE_COL_INDEX);
-    billing.rate = getRate().get(employee.location).doubleValue();
+    billing.rate = getRate().get(employee.location);
     billing.workLocation = employee.location;
     employee.billing = billing;
 
@@ -218,10 +218,8 @@ public class ExcelInvoiceReader {
     while (currentRow < getLastRowIndex() -1) {
       Employee employee = getEmployee();
       employee.shadow = true;
-      String startRef = getCellReference(getCurrentRow(), RESOURCE_START_DATE_COL_INDEX);
-      String endRef = getCellReference(getCurrentRow(), RESOURCE_END_DATE_COL_INDEX);
-      String projCode = getString(getCurrentRow(), SHADOW_RESOURCE_SOW_CODE_COL_INDEX); //getCurrentRow().getCell(RESOURCE_NUM_DAYS_WORKED_COL_INDEX).getRawValue()
-      Project project = cache.getProject(projCode);
+      String code = getString(getCurrentRow(), SHADOW_RESOURCE_SOW_CODE_COL_INDEX);
+      Project project = cache.getProject(code);
       if (project != null) {
         project.employees.add(employee);
       }
@@ -237,10 +235,6 @@ public class ExcelInvoiceReader {
 
   private void rewind(int count) {
     currentRow -= (count + 1);
-  }
-
-  private XSSFRow getPreviousRow() {
-    return reportingMonthSheet.getRow(--currentRow);
   }
 
   private XSSFRow getNextRow() {
@@ -281,39 +275,5 @@ public class ExcelInvoiceReader {
   private Date getDate(XSSFRow row, int colIndex) {
     XSSFCell cell = row.getCell(colIndex);
     return cell.getDateCellValue();
-  }
-
-  private String getFormula(XSSFRow row, int colIndex) {
-    XSSFCell cell = row.getCell(colIndex);
-    return cell.getCellFormula();
-  }
-
-  private String setFormulaResultingString(XSSFRow row, int colIndex, String formula) {
-    XSSFCell cell = setFormula(row, colIndex, formula);
-    return cell.getStringCellValue();
-  }
-
-  private double setFormulaResultingNumeric(XSSFRow row, int colIndex, String formula) {
-    XSSFCell cell = setFormula(row, colIndex, formula);
-    return cell.getNumericCellValue();
-  }
-
-  private Date setFormulaResultingDate(XSSFRow row, int colIndex, String formula) {
-    XSSFCell cell = setFormula(row, colIndex, formula);
-    return cell.getDateCellValue();
-  }
-
-  private XSSFCell setFormula(XSSFRow row, int colIndex, String formula) {
-    XSSFCell cell = row.getCell(colIndex);
-    cell.setCellFormula(formula);
-    return cell;
-  }
-
-  private String getCellReference(XSSFRow row, int column) {
-    return row.getCell(column).getReference();
-  }
-
-  private String getCellReference(XSSFSheet sheet, int row, int column) {
-    return sheet.getRow(row).getCell(column).getReference();
   }
 }
