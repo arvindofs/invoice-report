@@ -1,5 +1,8 @@
 package com.objectfrontier.model;
 
+import com.google.gson.GsonBuilder;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -8,7 +11,7 @@ import java.util.List;
 public class ClientAccount {
   public String name;
   public String code;
-  public List<Project> projects;
+  public List<Project> projects = new ArrayList();
 
   public ClientAccount(String name) {
     this.name = name;
@@ -45,11 +48,8 @@ public class ClientAccount {
     return result;
   }
 
-  @Override public String toString() {
-    return "ClientAccount{" +
-                    "name='" + name + '\'' +
-                    ", code='" + code + '\'' +
-                    ", projects=" + projects +
-                    '}';
+  @Override
+  public String toString() {
+    return new GsonBuilder().setPrettyPrinting().create().toJson(this);
   }
 }

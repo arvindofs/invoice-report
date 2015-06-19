@@ -4,9 +4,7 @@ import com.objectfrontier.invoice.excel.exception.ReportException;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil;
 import com.objectfrontier.invoice.excel.system.Utils;
 import com.objectfrontier.localcache.DataCache;
-import com.objectfrontier.model.ClientAccount;
-import com.objectfrontier.model.Project;
-import com.objectfrontier.model.Rate;
+import com.objectfrontier.model.*;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -61,8 +59,8 @@ public class ExcelInvoiceReader {
 
     log.info("Sales report will be generated for " + getReportingMonthSheetName());
     for(File file : invoiceFiles) {
-      processInvoice(file);
       resetCurrent();
+      processInvoice(file);
     }
 
   }
@@ -127,58 +125,116 @@ public class ExcelInvoiceReader {
   }
 
   private void readClientAccount() throws ReportException {
-    currentClientAccount = null;
-    XSSFRow row = reportingMonthSheet.getRow(0);
-    if (!getString(row, CLIENT_NAME_LABEL_COL_INDEX).equals(CLIENT_NAME_LABEL))
+    if (!getString(getCurrentRow(), CLIENT_NAME_LABEL_COL_INDEX).equals(CLIENT_NAME_LABEL))
       throw new ReportException("Monthly invoice sheet is not in valid format.");
 
-    String clientName = getString(row, CLIENT_NAME_COL_INDEX);
+    String clientName = getString(getCurrentRow(), CLIENT_NAME_COL_INDEX);
     currentClientAccount = cache.getClient(clientName);
     if (currentClientAccount == null) {
       addClient(clientName);
+    } else {
+      skipRows(1);
     }
-    currentRow = 6;
+    skipRows(4);
     readProjectInvoice();
+//    log.info(currentClientAccount.toString());
   }
 
   private void addClient(String clientName) {
     currentClientAccount = cache.addClient(clientName);
-    XSSFRow row = reportingMonthSheet.getRow(1);
-    currentClientAccount.code = getString(row, CLIENT_CODE_COL_INDEX);
-
+    currentClientAccount.code = getString(getNextRow(), CLIENT_CODE_COL_INDEX);
   }
 
   private void readProjectInvoice() throws ReportException {
     while (currentRow < getLastRowIndex()-1) {
-      XSSFRow row = getCurrentRow();
-      if (row == null) break;
-      if (SOW_ID_LABEL.equals(getString(row, SOW_ID_LABEL_COL_INDEX))) {
-        String id = getString(row, SOW_ID_COL_INDEX);
-        currentProject = cache.getProject(id);
-        if (currentProject == null) addProject(id);
+      if (getCurrentRow() == null) break;
+
+      if (SOW_ID_LABEL.equals(getString(getCurrentRow(), SOW_ID_LABEL_COL_INDEX))) {
+        skipRows(1);
+        String code = getString(getCurrentRow(), SOW_CODE_COL_INDEX);
+        currentProject = cache.getProject(code);
+        rewind(1);
+        if (currentProject == null) {
+          addProject(code);
+        } else {
+          skipRows(0);
+        }
+        skipRows(4);
         addEmployees();
       }
-      currentRow ++;
+
+      getNextRow();
+
+      if (SHADOW_RESOURCE_LABEL.equals(getString(getCurrentRow(), SHADOW_RESOURCE_LABEL_COL_INDEX))) {
+        addShadowResources();
+      }
+
     }
   }
 
-  private void addProject(String id) throws ReportException {
-    currentProject = cache.addProject(id);
+  private void addProject(String code) throws ReportException {
+    currentProject = cache.addProject(code);
+    currentProject.id = getString(getCurrentRow(), SOW_ID_COL_INDEX);
     currentProject.startDate = getDate(getCurrentRow(), SOW_START_DATE_COL_INDEX);
     currentProject.name = getString(getNextRow(), SOW_NAME_COL_INDEX);
     currentProject.endDate = getDate(getCurrentRow(), SOW_END_DATE_COL_INDEX);
-    currentProject.code = getString(getNextRow(), SOW_CODE_COL_INDEX);
     currentProject.rate = getRate();
-    log.info(currentProject.toString());
-
+    currentClientAccount.projects.add(currentProject);
   }
 
-  private void addEmployees() {
+  private void addEmployees() throws ReportException {
+    while (currentRow < getLastRowIndex() -1) {
+      currentProject.employees.add(getEmployee());
+      if (SOW_TOTAL_LABEL.equals(getString(getNextRow(), SOW_TOTAL_LABEL_COL_INDEX))) break;
+    }
+    skipRows(2);
+  }
+
+  private Employee getEmployee() throws ReportException{
+    Employee employee = new Employee();
+    employee.role = getString(getCurrentRow(), RESOURCE_ROLE_COL_INDEX);
+    employee.location = getString(getCurrentRow(), RESOURCE_LOCATION_COL_INDEX);
+    employee.firstName = getString(getCurrentRow(), RESOURCE_FIRST_NAME_COL_INDEX);
+    employee.lastName = getString(getCurrentRow(), RESOURCE_LAST_NAME_COL_INDEX);
+    employee.shadow = false;
+    Billing billing = new Billing();
+    billing.billed = getNumeric(getCurrentRow(), RESOURCE_INVOICE_AMOUNT_COL_INDEX);
+    billing.billiablePercent = getNumeric(getCurrentRow(), RESOURCE_BILLABLE_PERCENT_COL_INDEX) * 100;
+    billing.ptoDays = getNumeric(getCurrentRow(), RESOURCE_PTO_COUNT_COL_INDEX);
+    billing.endDate = getDate(getCurrentRow(), RESOURCE_END_DATE_COL_INDEX);
+    billing.billableDays = getNumeric(getCurrentRow(), RESOURCE_NUM_DAYS_WORKED_COL_INDEX);
+    billing.startDate = getDate(getCurrentRow(), RESOURCE_START_DATE_COL_INDEX);
+    billing.rate = getRate().get(employee.location).doubleValue();
+    billing.workLocation = employee.location;
+    employee.billing = billing;
+
+    return employee;
+  }
+
+  private void addShadowResources() throws ReportException {
+    skipRows(1);
+    while (currentRow < getLastRowIndex() -1) {
+      Employee employee = getEmployee();
+      employee.shadow = true;
+      String startRef = getCellReference(getCurrentRow(), RESOURCE_START_DATE_COL_INDEX);
+      String endRef = getCellReference(getCurrentRow(), RESOURCE_END_DATE_COL_INDEX);
+      String projCode = getString(getCurrentRow(), SHADOW_RESOURCE_SOW_CODE_COL_INDEX); //getCurrentRow().getCell(RESOURCE_NUM_DAYS_WORKED_COL_INDEX).getRawValue()
+      Project project = cache.getProject(projCode);
+      if (project != null) {
+        project.employees.add(employee);
+      }
+      if (SOW_TOTAL_LABEL.equals(getString(getNextRow(), SOW_TOTAL_LABEL_COL_INDEX))) break;
+      if (getCurrentRow().getCell(1) == null) break;
+    }
 
   }
 
   private void skipRows(int count) {
     currentRow += count + 1;
+  }
+
+  private void rewind(int count) {
+    currentRow -= (count + 1);
   }
 
   private XSSFRow getPreviousRow() {
@@ -249,6 +305,10 @@ public class ExcelInvoiceReader {
     XSSFCell cell = row.getCell(colIndex);
     cell.setCellFormula(formula);
     return cell;
+  }
+
+  private String getCellReference(XSSFRow row, int column) {
+    return row.getCell(column).getReference();
   }
 
   private String getCellReference(XSSFSheet sheet, int row, int column) {

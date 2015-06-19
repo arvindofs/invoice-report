@@ -1,5 +1,7 @@
 package com.objectfrontier.model;
 
+import com.google.gson.GsonBuilder;
+
 import java.util.Date;
 
 /**
@@ -8,7 +10,8 @@ import java.util.Date;
 public class Billing {
   public Date startDate;
   public Date endDate;
-  public double amount;
+  public double rate;
+  public double billed;
   public double billiablePercent;
   public double billableDays;
   public double ptoDays;
@@ -23,13 +26,15 @@ public class Billing {
 
     Billing billing = (Billing) o;
 
-    if (Double.compare(billing.amount, amount) != 0)
-      return false;
     if (Double.compare(billing.billableDays, billableDays) != 0)
+      return false;
+    if (Double.compare(billing.billed, billed) != 0)
       return false;
     if (Double.compare(billing.billiablePercent, billiablePercent) != 0)
       return false;
     if (Double.compare(billing.ptoDays, ptoDays) != 0)
+      return false;
+    if (Double.compare(billing.rate, rate) != 0)
       return false;
     if (endDate != null ? !endDate.equals(billing.endDate) : billing.endDate != null)
       return false;
@@ -47,7 +52,9 @@ public class Billing {
     long temp;
     result = startDate != null ? startDate.hashCode() : 0;
     result = 31 * result + (endDate != null ? endDate.hashCode() : 0);
-    temp = Double.doubleToLongBits(amount);
+    temp = Double.doubleToLongBits(rate);
+    result = 31 * result + (int) (temp ^ (temp >>> 32));
+    temp = Double.doubleToLongBits(billed);
     result = 31 * result + (int) (temp ^ (temp >>> 32));
     temp = Double.doubleToLongBits(billiablePercent);
     result = 31 * result + (int) (temp ^ (temp >>> 32));
@@ -59,15 +66,8 @@ public class Billing {
     return result;
   }
 
-  @Override public String toString() {
-    return "Billing{" +
-                    "startDate=" + startDate +
-                    ", endDate=" + endDate +
-                    ", amount=" + amount +
-                    ", billiablePercent=" + billiablePercent +
-                    ", billableDays=" + billableDays +
-                    ", ptoDays=" + ptoDays +
-                    ", workLocation='" + workLocation + '\'' +
-                    '}';
+  @Override
+  public String toString() {
+    return new GsonBuilder().setPrettyPrinting().create().toJson(this);
   }
 }

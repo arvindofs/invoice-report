@@ -12,6 +12,8 @@ public class InvoiceUtil {
 
   public static final int SOW_ID_LABEL_COL_INDEX = 2;
   public static final int SOW_ID_COL_INDEX = 3;
+  public static final int SOW_TOTAL_LABEL_COL_INDEX = 2;
+  public static final int SOW_TOTAL_COL_INDEX = 6;
   public static final int SOW_NAME_LABEL_COL_INDEX = 2;
   public static final int SOW_NAME_COL_INDEX = 3;
   public static final int SOW_START_DATE_LABEL_COL_INDEX = 5;
@@ -33,8 +35,8 @@ public class InvoiceUtil {
   public static final int RESOURCE_FIRST_NAME_COL_INDEX = 11;
   public static final int RESOURCE_LAST_NAME_COL_INDEX = 12;
 
+  public static final int SHADOW_RESOURCE_LABEL_COL_INDEX = 2;
   public static final int SHADOW_RESOURCE_SOW_CODE_COL_INDEX = 10;
-
 
   public static final int SETTINGS_LOCATION_LABEL_COL_INDEX = 2;
   public static final int SETTINGS_LOCATION_RATE_COL_INDEX = 3;
@@ -48,7 +50,7 @@ public class InvoiceUtil {
   public static final String SOW_TOTAL_LABEL = "SOW Total";
   public static final String ROLE_LABEL = "Role";
   public static final String CORE_RESOURCE_LABEL = "Core Resources";
-  public static final String SHADOW_RESOURCE_LABEL = "shadow Resources";
+  public static final String SHADOW_RESOURCE_LABEL = "Shadow Resources";
 
   public static enum MONTH {Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Nov, Dec};
 

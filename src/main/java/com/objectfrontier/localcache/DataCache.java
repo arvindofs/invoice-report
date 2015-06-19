@@ -42,9 +42,9 @@ public class DataCache {
     return projectCache.get(name);
   }
 
-  public Project addProject(String id) {
-    Project project = new Project(id);
-    projectCache.put(id, project);
+  public Project addProject(String code) {
+    Project project = new Project(code);
+    projectCache.put(code, project);
     return project;
   }
 }

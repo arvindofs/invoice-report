@@ -59,7 +59,7 @@ public class UtilsTest {
 
   @Test
   public void testbuildSalesReport() throws Exception {
-    invoiceReader.buildSalesReport(2015, MONTH.Mar);
+    invoiceReader.buildSalesReport(2015, MONTH.May);
   }
 
   @Test

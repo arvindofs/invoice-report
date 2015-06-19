@@ -1,5 +1,7 @@
 package com.objectfrontier.model;
 
+import com.google.gson.GsonBuilder;
+
 import java.util.HashMap;
 
 /**
@@ -7,4 +9,7 @@ import java.util.HashMap;
  */
 public class Rate extends HashMap<String, Double>{
 
+  @Override public String toString() {
+    return new GsonBuilder().setPrettyPrinting().create().toJson(this);
+  }
 }

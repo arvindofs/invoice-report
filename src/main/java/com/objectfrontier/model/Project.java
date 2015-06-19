@@ -1,5 +1,8 @@
 package com.objectfrontier.model;
 
+import com.google.gson.GsonBuilder;
+
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -12,11 +15,11 @@ public class Project {
   public String code;
   public Date startDate;
   public Date endDate;
-  public List<Employee> employees;
+  public List<Employee> employees = new ArrayList();
   public Rate rate;
 
-  public Project(String id) {
-    this.id = id;
+  public Project(String code) {
+    this.code = code;
   }
 
   public float getTotalInvoiceAmount() throws Exception{
@@ -62,15 +65,8 @@ public class Project {
     return result;
   }
 
-  @Override public String toString() {
-    return "Project{" +
-                    "id='" + id + '\'' +
-                    ", name='" + name + '\'' +
-                    ", code='" + code + '\'' +
-                    ", startDate=" + startDate +
-                    ", endDate=" + endDate +
-                    ", employees=" + employees +
-                    ", rate=" + rate +
-                    '}';
+  @Override
+  public String toString() {
+    return new GsonBuilder().setPrettyPrinting().create().toJson(this);
   }
 }
