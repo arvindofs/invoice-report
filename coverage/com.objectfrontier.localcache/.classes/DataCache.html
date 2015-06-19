@@ -1,0 +1,133 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DataCache</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.objectfrontier.localcache</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DataCache (com.objectfrontier.localcache)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DataCache</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (11/ 11)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.objectfrontier.localcache;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import com.objectfrontier.model.ClientAccount;
+<i>4</i>&nbsp;import com.objectfrontier.model.Employee;
+<i>5</i>&nbsp;import com.objectfrontier.model.Project;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;import java.util.Collections;
+<i>8</i>&nbsp;import java.util.Map;
+<i>9</i>&nbsp;import java.util.WeakHashMap;
+<i>10</i>&nbsp;
+<i>11</i>&nbsp;/**
+<i>12</i>&nbsp; * Created by ahariharan on 6/18/15.
+<i>13</i>&nbsp; */
+<b class="fc"><i>14</i>&nbsp;public class DataCache {</b>
+<i>15</i>&nbsp;
+<i>16</i>&nbsp;
+<b class="fc"><i>17</i>&nbsp;  public Map&lt;String, ClientAccount&gt; clientAccountCache = Collections.synchronizedMap(new WeakHashMap&lt;String, ClientAccount&gt;());</b>
+<i>18</i>&nbsp;//  Map&lt;String, Employee&gt; employeeCache = Collections.synchronizedMap(new WeakHashMap&lt;String, Employee&gt;());
+<b class="fc"><i>19</i>&nbsp;  Map&lt;String, Project&gt; projectCache = Collections.synchronizedMap(new WeakHashMap&lt;String, Project&gt;());</b>
+<i>20</i>&nbsp;
+<i>21</i>&nbsp;  public ClientAccount getClient(String name) {
+<b class="fc"><i>22</i>&nbsp;    return clientAccountCache.get(name);</b>
+<i>23</i>&nbsp;  }
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;  public ClientAccount addClient(String  name) {
+<b class="fc"><i>26</i>&nbsp;    ClientAccount clientAccount = new ClientAccount(name);</b>
+<b class="fc"><i>27</i>&nbsp;    clientAccountCache.put(clientAccount.name, clientAccount);</b>
+<b class="fc"><i>28</i>&nbsp;    return clientAccount;</b>
+<i>29</i>&nbsp;  }
+<i>30</i>&nbsp;
+<i>31</i>&nbsp;//  public Employee getEmployee(String firstName, String lastName) {
+<i>32</i>&nbsp;//    return employeeCache.get(String.format(&quot;%s.%s&quot;, firstName, lastName));
+<i>33</i>&nbsp;//  }
+<i>34</i>&nbsp;//
+<i>35</i>&nbsp;//  public Employee addEmployee(String firstName, String lastName) {
+<i>36</i>&nbsp;//    Employee employee = new Employee(firstName, lastName);
+<i>37</i>&nbsp;//    employeeCache.put(String.format(&quot;%s.%s&quot;, employee.firstName, employee.lastName), employee);
+<i>38</i>&nbsp;//    return employee;
+<i>39</i>&nbsp;//  }
+<i>40</i>&nbsp;
+<i>41</i>&nbsp;  public Project getProject(String name) {
+<b class="fc"><i>42</i>&nbsp;    return projectCache.get(name);</b>
+<i>43</i>&nbsp;  }
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;  public Project addProject(String code) {
+<b class="fc"><i>46</i>&nbsp;    Project project = new Project(code);</b>
+<b class="fc"><i>47</i>&nbsp;    projectCache.put(code, project);</b>
+<b class="fc"><i>48</i>&nbsp;    return project;</b>
+<i>49</i>&nbsp;  }
+<i>50</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2015-06-19 18:36</div>
+</div>
+</body>
+</html>

@@ -14,7 +14,7 @@ import java.util.WeakHashMap;
 public class DataCache {
 
 
-  Map<String, ClientAccount> clientAccountCache = Collections.synchronizedMap(new WeakHashMap<String, ClientAccount>());
+  public Map<String, ClientAccount> clientAccountCache = Collections.synchronizedMap(new WeakHashMap<String, ClientAccount>());
 //  Map<String, Employee> employeeCache = Collections.synchronizedMap(new WeakHashMap<String, Employee>());
   Map<String, Project> projectCache = Collections.synchronizedMap(new WeakHashMap<String, Project>());
 

@@ -1,0 +1,155 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Project</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.objectfrontier.model</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Project (com.objectfrontier.model)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Project</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    20%
+  </span>
+  <span class="absValue">
+    (1/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    9.1%
+  </span>
+  <span class="absValue">
+    (3/ 33)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.objectfrontier.model;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import com.google.gson.GsonBuilder;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;import java.util.ArrayList;
+<i>6</i>&nbsp;import java.util.Date;
+<i>7</i>&nbsp;import java.util.List;
+<i>8</i>&nbsp;
+<i>9</i>&nbsp;/**
+<i>10</i>&nbsp; * Created by ahariharan on 6/18/15.
+<i>11</i>&nbsp; */
+<i>12</i>&nbsp;public class Project {
+<i>13</i>&nbsp;  public String id;
+<i>14</i>&nbsp;  public String name;
+<i>15</i>&nbsp;  public String code;
+<i>16</i>&nbsp;  public Date startDate;
+<i>17</i>&nbsp;  public Date endDate;
+<b class="fc"><i>18</i>&nbsp;  public List&lt;Employee&gt; employees = new ArrayList();</b>
+<i>19</i>&nbsp;  public Rate rate;
+<i>20</i>&nbsp;
+<b class="fc"><i>21</i>&nbsp;  public Project(String code) {</b>
+<b class="fc"><i>22</i>&nbsp;    this.code = code;</b>
+<i>23</i>&nbsp;  }
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;  public float getTotalInvoiceAmount() throws Exception{
+<b class="nc"><i>26</i>&nbsp;    throw new Exception(&quot;Method not implemented&quot;);</b>
+<i>27</i>&nbsp;  }
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;  @Override
+<i>30</i>&nbsp;  public boolean equals(Object o) {
+<b class="nc"><i>31</i>&nbsp;    if (this == o)</b>
+<b class="nc"><i>32</i>&nbsp;      return true;</b>
+<b class="nc"><i>33</i>&nbsp;    if (o == null || getClass() != o.getClass())</b>
+<b class="nc"><i>34</i>&nbsp;      return false;</b>
+<i>35</i>&nbsp;
+<b class="nc"><i>36</i>&nbsp;    Project project = (Project) o;</b>
+<i>37</i>&nbsp;
+<b class="nc"><i>38</i>&nbsp;    if (code != null ? !code.equals(project.code) : project.code != null)</b>
+<b class="nc"><i>39</i>&nbsp;      return false;</b>
+<b class="nc"><i>40</i>&nbsp;    if (employees != null ? !employees.equals(project.employees) : project.employees != null)</b>
+<b class="nc"><i>41</i>&nbsp;      return false;</b>
+<b class="nc"><i>42</i>&nbsp;    if (endDate != null ? !endDate.equals(project.endDate) : project.endDate != null)</b>
+<b class="nc"><i>43</i>&nbsp;      return false;</b>
+<b class="nc"><i>44</i>&nbsp;    if (id != null ? !id.equals(project.id) : project.id != null)</b>
+<b class="nc"><i>45</i>&nbsp;      return false;</b>
+<b class="nc"><i>46</i>&nbsp;    if (name != null ? !name.equals(project.name) : project.name != null)</b>
+<b class="nc"><i>47</i>&nbsp;      return false;</b>
+<b class="nc"><i>48</i>&nbsp;    if (rate != null ? !rate.equals(project.rate) : project.rate != null)</b>
+<b class="nc"><i>49</i>&nbsp;      return false;</b>
+<b class="nc"><i>50</i>&nbsp;    if (startDate != null ? !startDate.equals(project.startDate) : project.startDate != null)</b>
+<b class="nc"><i>51</i>&nbsp;      return false;</b>
+<i>52</i>&nbsp;
+<b class="nc"><i>53</i>&nbsp;    return true;</b>
+<i>54</i>&nbsp;  }
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;  @Override
+<i>57</i>&nbsp;  public int hashCode() {
+<b class="nc"><i>58</i>&nbsp;    int result = id != null ? id.hashCode() : 0;</b>
+<b class="nc"><i>59</i>&nbsp;    result = 31 * result + (name != null ? name.hashCode() : 0);</b>
+<b class="nc"><i>60</i>&nbsp;    result = 31 * result + (code != null ? code.hashCode() : 0);</b>
+<b class="nc"><i>61</i>&nbsp;    result = 31 * result + (startDate != null ? startDate.hashCode() : 0);</b>
+<b class="nc"><i>62</i>&nbsp;    result = 31 * result + (endDate != null ? endDate.hashCode() : 0);</b>
+<b class="nc"><i>63</i>&nbsp;    result = 31 * result + (employees != null ? employees.hashCode() : 0);</b>
+<b class="nc"><i>64</i>&nbsp;    result = 31 * result + (rate != null ? rate.hashCode() : 0);</b>
+<b class="nc"><i>65</i>&nbsp;    return result;</b>
+<i>66</i>&nbsp;  }
+<i>67</i>&nbsp;
+<i>68</i>&nbsp;  @Override
+<i>69</i>&nbsp;  public String toString() {
+<b class="nc"><i>70</i>&nbsp;    return new GsonBuilder().setPrettyPrinting().create().toJson(this);</b>
+<i>71</i>&nbsp;  }
+<i>72</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2015-06-19 18:36</div>
+</div>
+</body>
+</html>

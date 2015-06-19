@@ -1,10 +1,11 @@
-package com.objectfontier.excel.reports.sales;
+package com.objectfrontier.excel.reports.sales;
 
 import com.objectfrontier.invoice.excel.reports.sales.ExcelInvoiceReader;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil.MONTH;
 import com.objectfrontier.invoice.excel.system.Utils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -32,7 +33,7 @@ public class UtilsTest {
   public void tearDown() throws Exception {
   }
 
-  @Test
+  @Ignore
   public void getFileLists() throws Exception {
     List<File> fileList = utils.getInvoiceFiles();
     assertEquals(3, fileList.size());
@@ -41,7 +42,7 @@ public class UtilsTest {
     }
   }
 
-  @Test
+  @Ignore
   public void testFileNameMatcher() throws Exception {
     boolean isMatching = utils.isInvoiceFileName("Lancope-Monthly-Invoice-Detail-2015.xlsx");
     assertTrue(isMatching);
@@ -59,13 +60,7 @@ public class UtilsTest {
 
   @Test
   public void testbuildSalesReport() throws Exception {
-    invoiceReader.buildSalesReport(2015, MONTH.May);
+    System.out.println(invoiceReader.buildSalesReport(2015, MONTH.May));
   }
 
-  @Test
-  public void testDoubleValue() throws Exception {
-    double d = 3.4;
-    assertEquals(3.4d, d, 0);
-
-  }
 }

@@ -16,6 +16,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import static com.objectfrontier.invoice.excel.system.InvoiceUtil.*;
@@ -52,7 +53,7 @@ public class ExcelInvoiceReader {
     invoiceFiles = Utils.getInstance().getInvoiceFiles();
   }
 
-  public void buildSalesReport(int year, InvoiceUtil.MONTH month) throws ReportException{
+  public Map<String, ClientAccount> buildSalesReport(int year, InvoiceUtil.MONTH month) throws ReportException{
     if (year < 2015) throw new ReportException("Year to build sales report must be 2015 and above");
     this.reportingYear = year;
     this.reportingMonth = month;
@@ -63,6 +64,7 @@ public class ExcelInvoiceReader {
       processInvoice(file);
     }
 
+    return cache.clientAccountCache;
   }
 
   private void resetCurrent() {

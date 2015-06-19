@@ -1,0 +1,139 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Employee</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.objectfrontier.model</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Employee (com.objectfrontier.model)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Employee</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    3.7%
+  </span>
+  <span class="absValue">
+    (1/ 27)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.objectfrontier.model;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import com.google.gson.GsonBuilder;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;/**
+<i>6</i>&nbsp; * Created by ahariharan on 6/18/15.
+<i>7</i>&nbsp; */
+<b class="fc"><i>8</i>&nbsp;public class Employee {</b>
+<i>9</i>&nbsp;  public String firstName;
+<i>10</i>&nbsp;  public String lastName;
+<i>11</i>&nbsp;  public String role;
+<i>12</i>&nbsp;  public Billing billing;
+<i>13</i>&nbsp;  public boolean shadow;
+<i>14</i>&nbsp;  public String location;
+<i>15</i>&nbsp;
+<i>16</i>&nbsp;  @Override
+<i>17</i>&nbsp;  public boolean equals(Object o) {
+<b class="nc"><i>18</i>&nbsp;    if (this == o)</b>
+<b class="nc"><i>19</i>&nbsp;      return true;</b>
+<b class="nc"><i>20</i>&nbsp;    if (o == null || getClass() != o.getClass())</b>
+<b class="nc"><i>21</i>&nbsp;      return false;</b>
+<i>22</i>&nbsp;
+<b class="nc"><i>23</i>&nbsp;    Employee employee = (Employee) o;</b>
+<i>24</i>&nbsp;
+<b class="nc"><i>25</i>&nbsp;    if (shadow != employee.shadow)</b>
+<b class="nc"><i>26</i>&nbsp;      return false;</b>
+<b class="nc"><i>27</i>&nbsp;    if (billing != null ? !billing.equals(employee.billing) : employee.billing != null)</b>
+<b class="nc"><i>28</i>&nbsp;      return false;</b>
+<b class="nc"><i>29</i>&nbsp;    if (firstName != null ? !firstName.equals(employee.firstName) : employee.firstName != null)</b>
+<b class="nc"><i>30</i>&nbsp;      return false;</b>
+<b class="nc"><i>31</i>&nbsp;    if (lastName != null ? !lastName.equals(employee.lastName) : employee.lastName != null)</b>
+<b class="nc"><i>32</i>&nbsp;      return false;</b>
+<b class="nc"><i>33</i>&nbsp;    if (location != null ? !location.equals(employee.location) : employee.location != null)</b>
+<b class="nc"><i>34</i>&nbsp;      return false;</b>
+<b class="nc"><i>35</i>&nbsp;    if (role != null ? !role.equals(employee.role) : employee.role != null)</b>
+<b class="nc"><i>36</i>&nbsp;      return false;</b>
+<i>37</i>&nbsp;
+<b class="nc"><i>38</i>&nbsp;    return true;</b>
+<i>39</i>&nbsp;  }
+<i>40</i>&nbsp;
+<i>41</i>&nbsp;  @Override
+<i>42</i>&nbsp;  public int hashCode() {
+<b class="nc"><i>43</i>&nbsp;    int result = firstName != null ? firstName.hashCode() : 0;</b>
+<b class="nc"><i>44</i>&nbsp;    result = 31 * result + (lastName != null ? lastName.hashCode() : 0);</b>
+<b class="nc"><i>45</i>&nbsp;    result = 31 * result + (role != null ? role.hashCode() : 0);</b>
+<b class="nc"><i>46</i>&nbsp;    result = 31 * result + (billing != null ? billing.hashCode() : 0);</b>
+<b class="nc"><i>47</i>&nbsp;    result = 31 * result + (shadow ? 1 : 0);</b>
+<b class="nc"><i>48</i>&nbsp;    result = 31 * result + (location != null ? location.hashCode() : 0);</b>
+<b class="nc"><i>49</i>&nbsp;    return result;</b>
+<i>50</i>&nbsp;  }
+<i>51</i>&nbsp;
+<i>52</i>&nbsp;  @Override
+<i>53</i>&nbsp;  public String toString() {
+<b class="nc"><i>54</i>&nbsp;    return new GsonBuilder().setPrettyPrinting().create().toJson(this);</b>
+<i>55</i>&nbsp;  }
+<i>56</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2015-06-19 18:36</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,402 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ExcelInvoiceReader</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.objectfrontier.invoice.excel.reports.sales</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ExcelInvoiceReader (com.objectfrontier.invoice.excel.reports.sales)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ExcelInvoiceReader</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (28/ 35)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.9%
+  </span>
+  <span class="absValue">
+    (121/ 146)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.objectfrontier.invoice.excel.reports.sales;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import com.objectfrontier.invoice.excel.exception.ReportException;
+<i>4</i>&nbsp;import com.objectfrontier.invoice.excel.system.InvoiceUtil;
+<i>5</i>&nbsp;import com.objectfrontier.invoice.excel.system.Utils;
+<i>6</i>&nbsp;import com.objectfrontier.localcache.DataCache;
+<i>7</i>&nbsp;import com.objectfrontier.model.*;
+<i>8</i>&nbsp;import org.apache.poi.xssf.usermodel.XSSFCell;
+<i>9</i>&nbsp;import org.apache.poi.xssf.usermodel.XSSFRow;
+<i>10</i>&nbsp;import org.apache.poi.xssf.usermodel.XSSFSheet;
+<i>11</i>&nbsp;import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+<i>12</i>&nbsp;
+<i>13</i>&nbsp;import java.io.File;
+<i>14</i>&nbsp;import java.io.FileInputStream;
+<i>15</i>&nbsp;import java.io.FileNotFoundException;
+<i>16</i>&nbsp;import java.io.IOException;
+<i>17</i>&nbsp;import java.util.Date;
+<i>18</i>&nbsp;import java.util.List;
+<i>19</i>&nbsp;import java.util.Map;
+<i>20</i>&nbsp;import java.util.logging.Logger;
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;import static com.objectfrontier.invoice.excel.system.InvoiceUtil.*;
+<i>23</i>&nbsp;
+<i>24</i>&nbsp;/**
+<i>25</i>&nbsp; * Created by ahariharan on 6/18/15.
+<i>26</i>&nbsp; */
+<i>27</i>&nbsp;public class ExcelInvoiceReader {
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;  private List&lt;File&gt; invoiceFiles;
+<b class="fc"><i>30</i>&nbsp;  private Logger log = Logger.getLogger(this.getClass().getName());</b>
+<i>31</i>&nbsp;
+<b class="fc"><i>32</i>&nbsp;  private DataCache cache = new DataCache();</b>
+<i>33</i>&nbsp;
+<i>34</i>&nbsp;  private XSSFWorkbook workbook;
+<i>35</i>&nbsp;  private XSSFSheet reportingMonthSheet;
+<i>36</i>&nbsp;  private XSSFSheet settingsSheet;
+<i>37</i>&nbsp;
+<i>38</i>&nbsp;  private int reportingYear;
+<i>39</i>&nbsp;  private InvoiceUtil.MONTH reportingMonth;
+<i>40</i>&nbsp;
+<i>41</i>&nbsp;  private int currentRow;
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;  private ClientAccount currentClientAccount;
+<i>44</i>&nbsp;  private Project currentProject;
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;
+<b class="fc"><i>47</i>&nbsp;  public ExcelInvoiceReader() {</b>
+<b class="fc"><i>48</i>&nbsp;    init();</b>
+<i>49</i>&nbsp;  }
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;  private void init() {
+<b class="fc"><i>52</i>&nbsp;    resetCurrentRow();</b>
+<b class="fc"><i>53</i>&nbsp;    invoiceFiles = Utils.getInstance().getInvoiceFiles();</b>
+<i>54</i>&nbsp;  }
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;  public Map&lt;String, ClientAccount&gt; buildSalesReport(int year, InvoiceUtil.MONTH month) throws ReportException{
+<b class="pc"><i>57</i>&nbsp;    if (year &lt; 2015) throw new ReportException(&quot;Year to build sales report must be 2015 and above&quot;);</b>
+<b class="fc"><i>58</i>&nbsp;    this.reportingYear = year;</b>
+<b class="fc"><i>59</i>&nbsp;    this.reportingMonth = month;</b>
+<i>60</i>&nbsp;
+<b class="fc"><i>61</i>&nbsp;    log.info(&quot;Sales report will be generated for &quot; + getReportingMonthSheetName());</b>
+<b class="fc"><i>62</i>&nbsp;    for(File file : invoiceFiles) {</b>
+<b class="fc"><i>63</i>&nbsp;      resetCurrent();</b>
+<b class="fc"><i>64</i>&nbsp;      processInvoice(file);</b>
+<b class="fc"><i>65</i>&nbsp;    }</b>
+<i>66</i>&nbsp;
+<b class="fc"><i>67</i>&nbsp;    return cache.clientAccountCache;</b>
+<i>68</i>&nbsp;  }
+<i>69</i>&nbsp;
+<i>70</i>&nbsp;  private void resetCurrent() {
+<b class="fc"><i>71</i>&nbsp;    resetCurrentRow();</b>
+<b class="fc"><i>72</i>&nbsp;    currentClientAccount = null;</b>
+<b class="fc"><i>73</i>&nbsp;    currentProject = null;</b>
+<i>74</i>&nbsp;  }
+<i>75</i>&nbsp;
+<i>76</i>&nbsp;  private String getSettingsSheetName() {
+<b class="fc"><i>77</i>&nbsp;    return &quot;Settings&quot;;</b>
+<i>78</i>&nbsp;  }
+<i>79</i>&nbsp;
+<i>80</i>&nbsp;  private String getReportingMonthSheetName() {
+<b class="fc"><i>81</i>&nbsp;    return reportingMonth.toString() + reportingYear;</b>
+<i>82</i>&nbsp;  }
+<i>83</i>&nbsp;
+<i>84</i>&nbsp;  private void resetCurrentRow() {
+<b class="fc"><i>85</i>&nbsp;    currentRow = 0;</b>
+<i>86</i>&nbsp;  }
+<i>87</i>&nbsp;
+<i>88</i>&nbsp;  private FileInputStream loadInvoice(File invoiceFile) {
+<i>89</i>&nbsp;    try {
+<b class="fc"><i>90</i>&nbsp;      return new FileInputStream(invoiceFile);</b>
+<i>91</i>&nbsp;
+<b class="nc"><i>92</i>&nbsp;    } catch (FileNotFoundException e) {</b>
+<b class="nc"><i>93</i>&nbsp;      log.info(&quot;Could not process file &quot; + invoiceFile.getAbsolutePath());</b>
+<b class="nc"><i>94</i>&nbsp;      log.info(e.getMessage());</b>
+<i>95</i>&nbsp;    }
+<b class="nc"><i>96</i>&nbsp;    return null;</b>
+<i>97</i>&nbsp;  }
+<i>98</i>&nbsp;
+<i>99</i>&nbsp;  private void loadWorkbook(FileInputStream fileInputStream) {
+<i>100</i>&nbsp;    try {
+<b class="fc"><i>101</i>&nbsp;      workbook = new XSSFWorkbook(fileInputStream);</b>
+<b class="nc"><i>102</i>&nbsp;    } catch (IOException e) {</b>
+<b class="nc"><i>103</i>&nbsp;      log.info(&quot;Error loading workbook &quot; + e.getMessage());</b>
+<b class="nc"><i>104</i>&nbsp;      workbook = null;</b>
+<b class="fc"><i>105</i>&nbsp;    }</b>
+<i>106</i>&nbsp;  }
+<i>107</i>&nbsp;
+<i>108</i>&nbsp;  private void loadSheets() {
+<b class="fc"><i>109</i>&nbsp;    settingsSheet = workbook.getSheet(getSettingsSheetName());</b>
+<b class="fc"><i>110</i>&nbsp;    reportingMonthSheet = workbook.getSheet(getReportingMonthSheetName());</b>
+<i>111</i>&nbsp;  }
+<i>112</i>&nbsp;
+<i>113</i>&nbsp;  private void processInvoice(File invoiceFile) {
+<b class="fc"><i>114</i>&nbsp;    FileInputStream fileInputStream = loadInvoice(invoiceFile);</b>
+<b class="pc"><i>115</i>&nbsp;    if (fileInputStream == null) return;</b>
+<b class="fc"><i>116</i>&nbsp;    log.info(&quot;Beggining to process &quot; + invoiceFile.getAbsolutePath());</b>
+<b class="fc"><i>117</i>&nbsp;    loadWorkbook(fileInputStream);</b>
+<b class="pc"><i>118</i>&nbsp;    if (workbook == null) return;</b>
+<b class="fc"><i>119</i>&nbsp;    loadSheets();</b>
+<b class="pc"><i>120</i>&nbsp;    if(reportingMonthSheet == null || settingsSheet ==null) return;</b>
+<i>121</i>&nbsp;    try {
+<b class="fc"><i>122</i>&nbsp;      readClientAccount();</b>
+<b class="nc"><i>123</i>&nbsp;    }  catch (ReportException exception) {</b>
+<b class="nc"><i>124</i>&nbsp;      log.info(&quot;Error occured during report generation for &quot; + invoiceFile.getAbsolutePath());</b>
+<b class="nc"><i>125</i>&nbsp;      log.info(&quot;Root cause: &quot; + exception.getMessage());</b>
+<b class="fc"><i>126</i>&nbsp;    }</b>
+<i>127</i>&nbsp;  }
+<i>128</i>&nbsp;
+<i>129</i>&nbsp;  private void readClientAccount() throws ReportException {
+<b class="pc"><i>130</i>&nbsp;    if (!getString(getCurrentRow(), CLIENT_NAME_LABEL_COL_INDEX).equals(CLIENT_NAME_LABEL))</b>
+<b class="nc"><i>131</i>&nbsp;      throw new ReportException(&quot;Monthly invoice sheet is not in valid format.&quot;);</b>
+<i>132</i>&nbsp;
+<b class="fc"><i>133</i>&nbsp;    String clientName = getString(getCurrentRow(), CLIENT_NAME_COL_INDEX);</b>
+<b class="fc"><i>134</i>&nbsp;    currentClientAccount = cache.getClient(clientName);</b>
+<b class="fc"><i>135</i>&nbsp;    if (currentClientAccount == null) {</b>
+<b class="fc"><i>136</i>&nbsp;      addClient(clientName);</b>
+<i>137</i>&nbsp;    } else {
+<b class="fc"><i>138</i>&nbsp;      skipRows(1);</b>
+<i>139</i>&nbsp;    }
+<b class="fc"><i>140</i>&nbsp;    skipRows(4);</b>
+<b class="fc"><i>141</i>&nbsp;    readProjectInvoice();</b>
+<i>142</i>&nbsp;//    log.info(currentClientAccount.toString());
+<i>143</i>&nbsp;  }
+<i>144</i>&nbsp;
+<i>145</i>&nbsp;  private void addClient(String clientName) {
+<b class="fc"><i>146</i>&nbsp;    currentClientAccount = cache.addClient(clientName);</b>
+<b class="fc"><i>147</i>&nbsp;    currentClientAccount.code = getString(getNextRow(), CLIENT_CODE_COL_INDEX);</b>
+<i>148</i>&nbsp;  }
+<i>149</i>&nbsp;
+<i>150</i>&nbsp;  private void readProjectInvoice() throws ReportException {
+<b class="fc"><i>151</i>&nbsp;    while (currentRow &lt; getLastRowIndex()-1) {</b>
+<b class="pc"><i>152</i>&nbsp;      if (getCurrentRow() == null) break;</b>
+<i>153</i>&nbsp;
+<b class="fc"><i>154</i>&nbsp;      if (SOW_ID_LABEL.equals(getString(getCurrentRow(), SOW_ID_LABEL_COL_INDEX))) {</b>
+<b class="fc"><i>155</i>&nbsp;        skipRows(1);</b>
+<b class="fc"><i>156</i>&nbsp;        String code = getString(getCurrentRow(), SOW_CODE_COL_INDEX);</b>
+<b class="fc"><i>157</i>&nbsp;        currentProject = cache.getProject(code);</b>
+<b class="fc"><i>158</i>&nbsp;        rewind(1);</b>
+<b class="pc"><i>159</i>&nbsp;        if (currentProject == null) {</b>
+<b class="fc"><i>160</i>&nbsp;          addProject(code);</b>
+<i>161</i>&nbsp;        } else {
+<b class="nc"><i>162</i>&nbsp;          skipRows(0);</b>
+<i>163</i>&nbsp;        }
+<b class="fc"><i>164</i>&nbsp;        skipRows(4);</b>
+<b class="fc"><i>165</i>&nbsp;        addEmployees();</b>
+<i>166</i>&nbsp;      }
+<i>167</i>&nbsp;
+<b class="fc"><i>168</i>&nbsp;      getNextRow();</b>
+<i>169</i>&nbsp;
+<b class="fc"><i>170</i>&nbsp;      if (SHADOW_RESOURCE_LABEL.equals(getString(getCurrentRow(), SHADOW_RESOURCE_LABEL_COL_INDEX))) {</b>
+<b class="fc"><i>171</i>&nbsp;        addShadowResources();</b>
+<i>172</i>&nbsp;      }
+<i>173</i>&nbsp;
+<i>174</i>&nbsp;    }
+<i>175</i>&nbsp;  }
+<i>176</i>&nbsp;
+<i>177</i>&nbsp;  private void addProject(String code) throws ReportException {
+<b class="fc"><i>178</i>&nbsp;    currentProject = cache.addProject(code);</b>
+<b class="fc"><i>179</i>&nbsp;    currentProject.id = getString(getCurrentRow(), SOW_ID_COL_INDEX);</b>
+<b class="fc"><i>180</i>&nbsp;    currentProject.startDate = getDate(getCurrentRow(), SOW_START_DATE_COL_INDEX);</b>
+<b class="fc"><i>181</i>&nbsp;    currentProject.name = getString(getNextRow(), SOW_NAME_COL_INDEX);</b>
+<b class="fc"><i>182</i>&nbsp;    currentProject.endDate = getDate(getCurrentRow(), SOW_END_DATE_COL_INDEX);</b>
+<b class="fc"><i>183</i>&nbsp;    currentProject.rate = getRate();</b>
+<b class="fc"><i>184</i>&nbsp;    currentClientAccount.projects.add(currentProject);</b>
+<i>185</i>&nbsp;  }
+<i>186</i>&nbsp;
+<i>187</i>&nbsp;  private void addEmployees() throws ReportException {
+<b class="pc"><i>188</i>&nbsp;    while (currentRow &lt; getLastRowIndex() -1) {</b>
+<b class="fc"><i>189</i>&nbsp;      currentProject.employees.add(getEmployee());</b>
+<b class="fc"><i>190</i>&nbsp;      if (SOW_TOTAL_LABEL.equals(getString(getNextRow(), SOW_TOTAL_LABEL_COL_INDEX))) break;</b>
+<i>191</i>&nbsp;    }
+<b class="fc"><i>192</i>&nbsp;    skipRows(2);</b>
+<i>193</i>&nbsp;  }
+<i>194</i>&nbsp;
+<i>195</i>&nbsp;  private Employee getEmployee() throws ReportException{
+<b class="fc"><i>196</i>&nbsp;    Employee employee = new Employee();</b>
+<b class="fc"><i>197</i>&nbsp;    employee.role = getString(getCurrentRow(), RESOURCE_ROLE_COL_INDEX);</b>
+<b class="fc"><i>198</i>&nbsp;    employee.location = getString(getCurrentRow(), RESOURCE_LOCATION_COL_INDEX);</b>
+<b class="fc"><i>199</i>&nbsp;    employee.firstName = getString(getCurrentRow(), RESOURCE_FIRST_NAME_COL_INDEX);</b>
+<b class="fc"><i>200</i>&nbsp;    employee.lastName = getString(getCurrentRow(), RESOURCE_LAST_NAME_COL_INDEX);</b>
+<b class="fc"><i>201</i>&nbsp;    employee.shadow = false;</b>
+<b class="fc"><i>202</i>&nbsp;    Billing billing = new Billing();</b>
+<b class="fc"><i>203</i>&nbsp;    billing.billed = getNumeric(getCurrentRow(), RESOURCE_INVOICE_AMOUNT_COL_INDEX);</b>
+<b class="fc"><i>204</i>&nbsp;    billing.billiablePercent = getNumeric(getCurrentRow(), RESOURCE_BILLABLE_PERCENT_COL_INDEX) * 100;</b>
+<b class="fc"><i>205</i>&nbsp;    billing.ptoDays = getNumeric(getCurrentRow(), RESOURCE_PTO_COUNT_COL_INDEX);</b>
+<b class="fc"><i>206</i>&nbsp;    billing.endDate = getDate(getCurrentRow(), RESOURCE_END_DATE_COL_INDEX);</b>
+<b class="fc"><i>207</i>&nbsp;    billing.billableDays = getNumeric(getCurrentRow(), RESOURCE_NUM_DAYS_WORKED_COL_INDEX);</b>
+<b class="fc"><i>208</i>&nbsp;    billing.startDate = getDate(getCurrentRow(), RESOURCE_START_DATE_COL_INDEX);</b>
+<b class="fc"><i>209</i>&nbsp;    billing.rate = getRate().get(employee.location).doubleValue();</b>
+<b class="fc"><i>210</i>&nbsp;    billing.workLocation = employee.location;</b>
+<b class="fc"><i>211</i>&nbsp;    employee.billing = billing;</b>
+<i>212</i>&nbsp;
+<b class="fc"><i>213</i>&nbsp;    return employee;</b>
+<i>214</i>&nbsp;  }
+<i>215</i>&nbsp;
+<i>216</i>&nbsp;  private void addShadowResources() throws ReportException {
+<b class="fc"><i>217</i>&nbsp;    skipRows(1);</b>
+<b class="pc"><i>218</i>&nbsp;    while (currentRow &lt; getLastRowIndex() -1) {</b>
+<b class="fc"><i>219</i>&nbsp;      Employee employee = getEmployee();</b>
+<b class="fc"><i>220</i>&nbsp;      employee.shadow = true;</b>
+<b class="fc"><i>221</i>&nbsp;      String startRef = getCellReference(getCurrentRow(), RESOURCE_START_DATE_COL_INDEX);</b>
+<b class="fc"><i>222</i>&nbsp;      String endRef = getCellReference(getCurrentRow(), RESOURCE_END_DATE_COL_INDEX);</b>
+<b class="fc"><i>223</i>&nbsp;      String projCode = getString(getCurrentRow(), SHADOW_RESOURCE_SOW_CODE_COL_INDEX); //getCurrentRow().getCell(RESOURCE_NUM_DAYS_WORKED_COL_INDEX).getRawValue()</b>
+<b class="fc"><i>224</i>&nbsp;      Project project = cache.getProject(projCode);</b>
+<b class="fc"><i>225</i>&nbsp;      if (project != null) {</b>
+<b class="fc"><i>226</i>&nbsp;        project.employees.add(employee);</b>
+<i>227</i>&nbsp;      }
+<b class="pc"><i>228</i>&nbsp;      if (SOW_TOTAL_LABEL.equals(getString(getNextRow(), SOW_TOTAL_LABEL_COL_INDEX))) break;</b>
+<b class="fc"><i>229</i>&nbsp;      if (getCurrentRow().getCell(1) == null) break;</b>
+<b class="fc"><i>230</i>&nbsp;    }</b>
+<i>231</i>&nbsp;
+<i>232</i>&nbsp;  }
+<i>233</i>&nbsp;
+<i>234</i>&nbsp;  private void skipRows(int count) {
+<b class="fc"><i>235</i>&nbsp;    currentRow += count + 1;</b>
+<i>236</i>&nbsp;  }
+<i>237</i>&nbsp;
+<i>238</i>&nbsp;  private void rewind(int count) {
+<b class="fc"><i>239</i>&nbsp;    currentRow -= (count + 1);</b>
+<i>240</i>&nbsp;  }
+<i>241</i>&nbsp;
+<i>242</i>&nbsp;  private XSSFRow getPreviousRow() {
+<b class="nc"><i>243</i>&nbsp;    return reportingMonthSheet.getRow(--currentRow);</b>
+<i>244</i>&nbsp;  }
+<i>245</i>&nbsp;
+<i>246</i>&nbsp;  private XSSFRow getNextRow() {
+<b class="fc"><i>247</i>&nbsp;    return reportingMonthSheet.getRow(++currentRow);</b>
+<i>248</i>&nbsp;  }
+<i>249</i>&nbsp;
+<i>250</i>&nbsp;  private XSSFRow getCurrentRow() {
+<b class="fc"><i>251</i>&nbsp;    return reportingMonthSheet.getRow(currentRow);</b>
+<i>252</i>&nbsp;  }
+<i>253</i>&nbsp;
+<i>254</i>&nbsp;  private Rate getRate() throws ReportException{
+<b class="fc"><i>255</i>&nbsp;    Rate workbookRate = new Rate();</b>
+<b class="pc"><i>256</i>&nbsp;    for (int i = SETTINGS_LOCATION_ROW_START_INDEX; i &lt;= SETTINGS_LOCATION_ROW_END_INDEX; i++) {</b>
+<b class="fc"><i>257</i>&nbsp;      XSSFRow row = settingsSheet.getRow(i);</b>
+<b class="fc"><i>258</i>&nbsp;      String location = getString(row, SETTINGS_LOCATION_LABEL_COL_INDEX);</b>
+<b class="fc"><i>259</i>&nbsp;      if (location.trim().length() == 0) break;</b>
+<b class="fc"><i>260</i>&nbsp;      double rate = getNumeric(row, SETTINGS_LOCATION_RATE_COL_INDEX);</b>
+<b class="fc"><i>261</i>&nbsp;      workbookRate.put(location, rate);</b>
+<i>262</i>&nbsp;    }
+<b class="fc"><i>263</i>&nbsp;    return workbookRate;</b>
+<i>264</i>&nbsp;  }
+<i>265</i>&nbsp;
+<i>266</i>&nbsp;  private int getLastRowIndex() {
+<b class="fc"><i>267</i>&nbsp;    return reportingMonthSheet.getLastRowNum();</b>
+<i>268</i>&nbsp;  }
+<i>269</i>&nbsp;
+<i>270</i>&nbsp;  private String getString(XSSFRow row, int colIndex) {
+<b class="fc"><i>271</i>&nbsp;    XSSFCell cell = row.getCell(colIndex);</b>
+<b class="fc"><i>272</i>&nbsp;    if (cell == null) return &quot;&quot;;</b>
+<b class="pc"><i>273</i>&nbsp;    return cell.getStringCellValue() == null ? &quot;&quot; : cell.getStringCellValue();</b>
+<i>274</i>&nbsp;  }
+<i>275</i>&nbsp;
+<i>276</i>&nbsp;  private double getNumeric(XSSFRow row, int colIndex)  {
+<b class="fc"><i>277</i>&nbsp;    XSSFCell cell = row.getCell(colIndex);</b>
+<b class="fc"><i>278</i>&nbsp;    return cell.getNumericCellValue();</b>
+<i>279</i>&nbsp;  }
+<i>280</i>&nbsp;
+<i>281</i>&nbsp;  private Date getDate(XSSFRow row, int colIndex) {
+<b class="fc"><i>282</i>&nbsp;    XSSFCell cell = row.getCell(colIndex);</b>
+<b class="fc"><i>283</i>&nbsp;    return cell.getDateCellValue();</b>
+<i>284</i>&nbsp;  }
+<i>285</i>&nbsp;
+<i>286</i>&nbsp;  private String getFormula(XSSFRow row, int colIndex) {
+<b class="nc"><i>287</i>&nbsp;    XSSFCell cell = row.getCell(colIndex);</b>
+<b class="nc"><i>288</i>&nbsp;    return cell.getCellFormula();</b>
+<i>289</i>&nbsp;  }
+<i>290</i>&nbsp;
+<i>291</i>&nbsp;  private String setFormulaResultingString(XSSFRow row, int colIndex, String formula) {
+<b class="nc"><i>292</i>&nbsp;    XSSFCell cell = setFormula(row, colIndex, formula);</b>
+<b class="nc"><i>293</i>&nbsp;    return cell.getStringCellValue();</b>
+<i>294</i>&nbsp;  }
+<i>295</i>&nbsp;
+<i>296</i>&nbsp;  private double setFormulaResultingNumeric(XSSFRow row, int colIndex, String formula) {
+<b class="nc"><i>297</i>&nbsp;    XSSFCell cell = setFormula(row, colIndex, formula);</b>
+<b class="nc"><i>298</i>&nbsp;    return cell.getNumericCellValue();</b>
+<i>299</i>&nbsp;  }
+<i>300</i>&nbsp;
+<i>301</i>&nbsp;  private Date setFormulaResultingDate(XSSFRow row, int colIndex, String formula) {
+<b class="nc"><i>302</i>&nbsp;    XSSFCell cell = setFormula(row, colIndex, formula);</b>
+<b class="nc"><i>303</i>&nbsp;    return cell.getDateCellValue();</b>
+<i>304</i>&nbsp;  }
+<i>305</i>&nbsp;
+<i>306</i>&nbsp;  private XSSFCell setFormula(XSSFRow row, int colIndex, String formula) {
+<b class="nc"><i>307</i>&nbsp;    XSSFCell cell = row.getCell(colIndex);</b>
+<b class="nc"><i>308</i>&nbsp;    cell.setCellFormula(formula);</b>
+<b class="nc"><i>309</i>&nbsp;    return cell;</b>
+<i>310</i>&nbsp;  }
+<i>311</i>&nbsp;
+<i>312</i>&nbsp;  private String getCellReference(XSSFRow row, int column) {
+<b class="fc"><i>313</i>&nbsp;    return row.getCell(column).getReference();</b>
+<i>314</i>&nbsp;  }
+<i>315</i>&nbsp;
+<i>316</i>&nbsp;  private String getCellReference(XSSFSheet sheet, int row, int column) {
+<b class="nc"><i>317</i>&nbsp;    return sheet.getRow(row).getCell(column).getReference();</b>
+<i>318</i>&nbsp;  }
+<i>319</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2015-06-19 18:36</div>
+</div>
+</body>
+</html>
