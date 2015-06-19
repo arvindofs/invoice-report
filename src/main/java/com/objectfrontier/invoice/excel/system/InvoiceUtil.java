@@ -10,8 +10,8 @@ public class InvoiceUtil {
   public static final int CLIENT_CODE_LABEL_COL_INDEX = 2;
   public static final int CLIENT_CODE_COL_INDEX = 3;
 
-  public static final int SOW_LABEL_COL_INDEX = 2;
-  public static final int SOW_COL_INDEX = 3;
+  public static final int SOW_ID_LABEL_COL_INDEX = 2;
+  public static final int SOW_ID_COL_INDEX = 3;
   public static final int SOW_NAME_LABEL_COL_INDEX = 2;
   public static final int SOW_NAME_COL_INDEX = 3;
   public static final int SOW_START_DATE_LABEL_COL_INDEX = 5;
@@ -38,10 +38,12 @@ public class InvoiceUtil {
 
   public static final int SETTINGS_LOCATION_LABEL_COL_INDEX = 2;
   public static final int SETTINGS_LOCATION_RATE_COL_INDEX = 3;
+  public static final int SETTINGS_LOCATION_ROW_START_INDEX = 1;
+  public static final int SETTINGS_LOCATION_ROW_END_INDEX = 20;
 
   public static final String CLIENT_NAME_LABEL = "Client Name";
   public static final String CLIENT_CODE_LABEL = "Client Code";
-  public static final String SOW_LABEL = "SOW #";
+  public static final String SOW_ID_LABEL = "SOW #";
   public static final String SOW_NAME_LABEL = "SOW Name";
   public static final String SOW_TOTAL_LABEL = "SOW Total";
   public static final String ROLE_LABEL = "Role";

@@ -6,6 +6,7 @@ import com.objectfrontier.invoice.excel.system.Utils;
 import com.objectfrontier.localcache.DataCache;
 import com.objectfrontier.model.ClientAccount;
 import com.objectfrontier.model.Project;
+import com.objectfrontier.model.Rate;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -42,6 +43,7 @@ public class ExcelInvoiceReader {
 
   private ClientAccount currentClientAccount;
   private Project currentProject;
+
 
   public ExcelInvoiceReader() {
     init();
@@ -117,17 +119,11 @@ public class ExcelInvoiceReader {
     loadSheets();
     if(reportingMonthSheet == null || settingsSheet ==null) return;
     try {
-//      readSettings();
       readClientAccount();
-//      readProjectInvoice();
     }  catch (ReportException exception) {
       log.info("Error occured during report generation for " + invoiceFile.getAbsolutePath());
       log.info("Root cause: " + exception.getMessage());
     }
-  }
-
-  private void readSettings() throws ReportException{
-    throw new ReportException("Method not implemented");
   }
 
   private void readClientAccount() throws ReportException {
@@ -141,24 +137,82 @@ public class ExcelInvoiceReader {
     if (currentClientAccount == null) {
       addClient(clientName);
     }
-
-
+    currentRow = 6;
+    readProjectInvoice();
   }
 
   private void addClient(String clientName) {
     currentClientAccount = cache.addClient(clientName);
-    XSSFRow row = reportingMonthSheet.getRow(0);
+    XSSFRow row = reportingMonthSheet.getRow(1);
+    currentClientAccount.code = getString(row, CLIENT_CODE_COL_INDEX);
 
   }
 
-  private void readProjectInvoice() throws ReportException{
-    throw new ReportException("Method not implemented");
+  private void readProjectInvoice() throws ReportException {
+    while (currentRow < getLastRowIndex()-1) {
+      XSSFRow row = getCurrentRow();
+      if (row == null) break;
+      if (SOW_ID_LABEL.equals(getString(row, SOW_ID_LABEL_COL_INDEX))) {
+        String id = getString(row, SOW_ID_COL_INDEX);
+        currentProject = cache.getProject(id);
+        if (currentProject == null) addProject(id);
+        addEmployees();
+      }
+      currentRow ++;
+    }
+  }
+
+  private void addProject(String id) throws ReportException {
+    currentProject = cache.addProject(id);
+    currentProject.startDate = getDate(getCurrentRow(), SOW_START_DATE_COL_INDEX);
+    currentProject.name = getString(getNextRow(), SOW_NAME_COL_INDEX);
+    currentProject.endDate = getDate(getCurrentRow(), SOW_END_DATE_COL_INDEX);
+    currentProject.code = getString(getNextRow(), SOW_CODE_COL_INDEX);
+    currentProject.rate = getRate();
+    log.info(currentProject.toString());
+
+  }
+
+  private void addEmployees() {
+
+  }
+
+  private void skipRows(int count) {
+    currentRow += count + 1;
+  }
+
+  private XSSFRow getPreviousRow() {
+    return reportingMonthSheet.getRow(--currentRow);
+  }
+
+  private XSSFRow getNextRow() {
+    return reportingMonthSheet.getRow(++currentRow);
+  }
+
+  private XSSFRow getCurrentRow() {
+    return reportingMonthSheet.getRow(currentRow);
+  }
+
+  private Rate getRate() throws ReportException{
+    Rate workbookRate = new Rate();
+    for (int i = SETTINGS_LOCATION_ROW_START_INDEX; i <= SETTINGS_LOCATION_ROW_END_INDEX; i++) {
+      XSSFRow row = settingsSheet.getRow(i);
+      String location = getString(row, SETTINGS_LOCATION_LABEL_COL_INDEX);
+      if (location.trim().length() == 0) break;
+      double rate = getNumeric(row, SETTINGS_LOCATION_RATE_COL_INDEX);
+      workbookRate.put(location, rate);
+    }
+    return workbookRate;
+  }
+
+  private int getLastRowIndex() {
+    return reportingMonthSheet.getLastRowNum();
   }
 
   private String getString(XSSFRow row, int colIndex) {
     XSSFCell cell = row.getCell(colIndex);
-    return cell.getStringCellValue();
-
+    if (cell == null) return "";
+    return cell.getStringCellValue() == null ? "" : cell.getStringCellValue();
   }
 
   private double getNumeric(XSSFRow row, int colIndex)  {
@@ -195,5 +249,9 @@ public class ExcelInvoiceReader {
     XSSFCell cell = row.getCell(colIndex);
     cell.setCellFormula(formula);
     return cell;
+  }
+
+  private String getCellReference(XSSFSheet sheet, int row, int column) {
+    return sheet.getRow(row).getCell(column).getReference();
   }
 }
