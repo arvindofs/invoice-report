@@ -40,16 +40,20 @@ public class ExcelInvoiceReader {
 
   private int currentRow;
 
+  private File currentFile;
   private ClientAccount currentClientAccount;
   private Project currentProject;
 
 
   public ExcelInvoiceReader() {
-    init();
   }
 
   private void init() {
     resetCurrentRow();
+    cache.clientAccountCache.clear();
+    cache.projectCache.clear();
+    currentProject = null;
+    currentClientAccount = null;
     invoiceFiles = Utils.getInstance().getInvoiceFiles();
   }
 
@@ -57,8 +61,9 @@ public class ExcelInvoiceReader {
     if (year < 2015) throw new ReportException("Year to build sales report must be 2015 and above");
     this.reportingYear = year;
     this.reportingMonth = month;
+    init();
 
-    log.info("Sales report will be generated for " + getReportingMonthSheetName());
+    log("Collectiong data for sales report");
     for(File file : invoiceFiles) {
       resetCurrent();
       processInvoice(file);
@@ -90,30 +95,33 @@ public class ExcelInvoiceReader {
       return new FileInputStream(invoiceFile);
 
     } catch (FileNotFoundException e) {
-      log.info("Could not process file " + invoiceFile.getAbsolutePath());
-      log.info(e.getMessage());
+      log("Could not process file " + invoiceFile.getAbsolutePath());
+      log(e.getMessage());
     }
     return null;
   }
 
   private void loadWorkbook(FileInputStream fileInputStream) {
+    log("Loading Workbook");
     try {
       workbook = new XSSFWorkbook(fileInputStream);
     } catch (IOException e) {
-      log.info("Error loading workbook " + e.getMessage());
+      log("Error loading workbook " + e.getMessage());
       workbook = null;
     }
   }
 
   private void loadSheets() {
+    log("Loading Sheets");
     settingsSheet = workbook.getSheet(getSettingsSheetName());
     reportingMonthSheet = workbook.getSheet(getReportingMonthSheetName());
-  }
+  }[]
 
   private void processInvoice(File invoiceFile) {
     FileInputStream fileInputStream = loadInvoice(invoiceFile);
+    currentFile = invoiceFile;
     if (fileInputStream == null) return;
-    log.info("Beggining to process " + invoiceFile.getAbsolutePath());
+    log("Started processing invoice sheet");
     loadWorkbook(fileInputStream);
     if (workbook == null) return;
     loadSheets();
@@ -121,12 +129,13 @@ public class ExcelInvoiceReader {
     try {
       readClientAccount();
     }  catch (ReportException exception) {
-      log.info("Error occured during report generation for " + invoiceFile.getAbsolutePath());
-      log.info("Root cause: " + exception.getMessage());
+      log("Error occured during report generation for " + invoiceFile.getAbsolutePath());
+      log("Root cause: " + exception.getMessage());
     }
   }
 
   private void readClientAccount() throws ReportException {
+    log("Reading client details");
     if (!getString(getCurrentRow(), CLIENT_NAME_LABEL_COL_INDEX).equals(CLIENT_NAME_LABEL))
       throw new ReportException("Monthly invoice sheet is not in valid format.");
 
@@ -139,15 +148,17 @@ public class ExcelInvoiceReader {
     }
     skipRows(4);
     readProjectInvoice();
-//    log.info(currentClientAccount.toString());
+//    log(currentClientAccount.toString());
   }
 
   private void addClient(String clientName) {
+    log("Adding client to cache");
     currentClientAccount = cache.addClient(clientName);
     currentClientAccount.code = getString(getNextRow(), CLIENT_CODE_COL_INDEX);
   }
 
   private void readProjectInvoice() throws ReportException {
+    log("Rading project specific rows");
     while (currentRow < getLastRowIndex()-1) {
       if (getCurrentRow() == null) break;
 
@@ -159,6 +170,7 @@ public class ExcelInvoiceReader {
         if (currentProject == null) {
           addProject(code);
         } else {
+          log("Project already exists in cache");
           skipRows(0);
         }
         skipRows(4);
@@ -167,14 +179,20 @@ public class ExcelInvoiceReader {
 
       getNextRow();
 
-      if (SHADOW_RESOURCE_LABEL.equals(getString(getCurrentRow(), SHADOW_RESOURCE_LABEL_COL_INDEX))) {
-        addShadowResources();
+      try {
+
+        if (SHADOW_RESOURCE_LABEL.equals(getString(getCurrentRow(), SHADOW_RESOURCE_LABEL_COL_INDEX))) {
+          addShadowResources();
+        }
+      } catch (NullPointerException npe) {
+        log("No Shadow resources found and not processing ?");
       }
 
     }
   }
 
   private void addProject(String code) throws ReportException {
+    log("Adding project to cache");
     currentProject = cache.addProject(code);
     currentProject.id = getString(getCurrentRow(), SOW_ID_COL_INDEX);
     currentProject.startDate = getDate(getCurrentRow(), SOW_START_DATE_COL_INDEX);
@@ -185,14 +203,28 @@ public class ExcelInvoiceReader {
   }
 
   private void addEmployees() throws ReportException {
+    log("Starting to fetch employees");
     while (currentRow < getLastRowIndex() -1) {
-      currentProject.employees.add(getEmployee());
+      log("Fetching employee from row " + currentRow);
+      Employee employee = getEmployee();
+      if (employee == null) return;
+      log("Adding employee " + employee.firstName + " " + employee.lastName);
+//      log("Added employee: " + employee);
+      currentProject.employees.add(employee);
       if (SOW_TOTAL_LABEL.equals(getString(getNextRow(), SOW_TOTAL_LABEL_COL_INDEX))) break;
     }
     skipRows(2);
   }
 
-  private Employee getEmployee() throws ReportException{
+  private Employee getEmployee() throws ReportException {
+    try {
+      log ("ROW --> " + getCurrentRow());
+      getNumeric(getCurrentRow(), 1);
+    } catch (NullPointerException npe) {
+      log("No more row exits, returning back");
+      return null;
+    }
+
     Employee employee = new Employee();
     employee.role = getString(getCurrentRow(), RESOURCE_ROLE_COL_INDEX);
     employee.location = getString(getCurrentRow(), RESOURCE_LOCATION_COL_INDEX);
@@ -209,19 +241,26 @@ public class ExcelInvoiceReader {
     billing.rate = getRate().get(employee.location);
     billing.workLocation = employee.location;
     employee.billing = billing;
-
+    log(" name --> " + employee.firstName + " " + employee.lastName);
     return employee;
   }
 
   private void addShadowResources() throws ReportException {
     skipRows(1);
     while (currentRow < getLastRowIndex() -1) {
+      log("Fetching shadow resource data");
       Employee employee = getEmployee();
+      if (employee == null) return;
+      log.info("Shadow resource name = " + employee.firstName + " " + employee.lastName);
       employee.shadow = true;
       String code = getString(getCurrentRow(), SHADOW_RESOURCE_SOW_CODE_COL_INDEX);
       Project project = cache.getProject(code);
       if (project != null) {
+        log.info("Adding shadow resource to project employee list");
         project.employees.add(employee);
+      } else {
+        log.info("No valid project assigned to shadow resource , hence not adding " + employee.firstName + " "
+                        + employee.lastName);
       }
       if (SOW_TOTAL_LABEL.equals(getString(getNextRow(), SOW_TOTAL_LABEL_COL_INDEX))) break;
       if (getCurrentRow().getCell(1) == null) break;
@@ -230,6 +269,7 @@ public class ExcelInvoiceReader {
   }
 
   private void skipRows(int count) {
+    log("skipping " + count + " rows");
     currentRow += count + 1;
   }
 
@@ -238,11 +278,15 @@ public class ExcelInvoiceReader {
   }
 
   private XSSFRow getNextRow() {
-    return reportingMonthSheet.getRow(++currentRow);
+    XSSFRow row = reportingMonthSheet.getRow(++currentRow);
+    log("Fetching Row = " + currentRow);
+    return row;
   }
 
   private XSSFRow getCurrentRow() {
-    return reportingMonthSheet.getRow(currentRow);
+    XSSFRow row = reportingMonthSheet.getRow(currentRow);
+    log("Current Row = " + currentRow + " row data is " + row);
+    return row;
   }
 
   private Rate getRate() throws ReportException{
@@ -275,5 +319,12 @@ public class ExcelInvoiceReader {
   private Date getDate(XSSFRow row, int colIndex) {
     XSSFCell cell = row.getCell(colIndex);
     return cell.getDateCellValue();
+  }
+
+  private void log(Object content) {
+    String prefix = currentFile == null ? "" : currentFile.getName() + ": ";
+    prefix = prefix + getReportingMonthSheetName() + ": ";
+//    log.info(prefix + content);
+    System.out.println(prefix + content);
   }
 }
