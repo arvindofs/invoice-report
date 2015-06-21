@@ -115,7 +115,7 @@ public class ExcelInvoiceReader {
     log("Loading Sheets");
     settingsSheet = workbook.getSheet(getSettingsSheetName());
     reportingMonthSheet = workbook.getSheet(getReportingMonthSheetName());
-  }[]
+  }
 
   private void processInvoice(File invoiceFile) {
     FileInputStream fileInputStream = loadInvoice(invoiceFile);
