@@ -173,23 +173,24 @@ public class ReportUI extends JFrame {
 
       @Override
       protected Boolean doInBackground() throws Exception {
+        int counter = 0;
+        reportProgressBar.setValue(0);;
+        reportProgressBar.setMaximum(monthList.getSelectedIndices().length * 2);
+
         for(int index : monthList.getSelectedIndices()) {
           try {
             reportProgressBar.setStringPainted(true);
             MONTH month = MONTH.valueOf(listModel.getElementAt(index).toString());
             int year = Integer.parseInt(yearComboBox.getSelectedItem().toString());
             Map<String, ClientAccount> clientAccounts = invoiceReader.buildSalesReport(year,month);
-            publish(index);
+            publish(++counter);
             ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts);
             XSSFWorkbook workbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
             FileOutputStream fos = new FileOutputStream(getOutputFile());
             workbook.write(fos);;
             fos.flush();
             fos.close();
-            publish(index);
-            progress.reset();
-            publish(index);
-
+            publish(++counter);
           } catch (Exception ex) {
             ex.printStackTrace();
             log("Exception occured " + ex.getMessage());
@@ -200,14 +201,13 @@ public class ReportUI extends JFrame {
       }
 
       @Override protected void process(List<Integer> chunks) {
-        if (progress.getLimit() == 0)
-        reportProgressBar.setMaximum(progress.getLimit());
-        reportProgressBar.setValue(progress.getCurrent());
+        reportProgressBar.setValue(chunks.get(0).intValue());
       }
 
       @Override protected void done() {
-        reportProgressBar.setValue(progress.getLimit());
+        reportProgressBar.setValue(monthList.getSelectedIndices().length * 2);
         toggleButtonEnablement();
+        JOptionPane.showMessageDialog(reportProgressBar.getRootPane(), "Sales report generation completed.");
       }
     };
 
@@ -264,9 +264,6 @@ public class ReportUI extends JFrame {
 
   private void log(Object o) {
     logTextArea.append(o + "\n");
-    reportProgressBar.setMaximum(progress.getLimit());
-    reportProgressBar.setValue(progress.getCurrent());
-
   }
 
   public static void main(String[] args) {

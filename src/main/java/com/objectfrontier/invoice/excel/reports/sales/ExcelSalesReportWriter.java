@@ -64,6 +64,7 @@ public class ExcelSalesReportWriter {
     }
     sheet = this.workbook.createSheet(getReportingMonthSheetName());
     writeHeader();
+    log("Initializing workbook completed before writing report");
   }
 
   private void writeHeader() {
@@ -98,6 +99,7 @@ public class ExcelSalesReportWriter {
   public XSSFWorkbook getSalesReport(XSSFWorkbook workbook, int year, MONTH month) throws ReportException {
     this.reportingYear = year;
     this.reportingMonth = month;
+    log("Preparing to write report to target excel");
     init(workbook);
     Iterator<String> iterator = clientAccounts.keySet().iterator();
     while(iterator.hasNext()) {
@@ -113,8 +115,10 @@ public class ExcelSalesReportWriter {
 
   private void writeClientSales() throws ReportException {
     if (currentClientAccount == null) throw new ReportException("Missing client account data");
+    log(String.format("Started writing report for client %s", currentClientAccount.name));
     for(Project project : currentClientAccount.projects) {
       this.currentProject = project;
+      log(String.format("Processing report for project %s[%s]", currentProject.name, currentProject.code));
       writeProjectSales();
     }
   }
@@ -127,6 +131,7 @@ public class ExcelSalesReportWriter {
   }
 
   private void writeDetails() {
+    log(String.format("Started writing details for employee: %s %s", currentEmployee.firstName, currentEmployee.lastName));
     XSSFRow row = sheet.createRow(thisRow());
     XSSFCell startDateCell = null;
     XSSFCell endDateCell = null;
@@ -161,6 +166,7 @@ public class ExcelSalesReportWriter {
     }
 
     progress.activityDone();
+    log(String.format("Finished writing deatils for employee: %s %s", currentEmployee.firstName, currentEmployee.lastName));
   }
 
   private CellStyle getDateFormatStyle() {
@@ -173,5 +179,11 @@ public class ExcelSalesReportWriter {
 
   private XSSFCell createCell(XSSFRow row) {
     return row.createCell(thisColumn());
+  }
+
+  private void log(Object content) {
+    String prefix = currentClientAccount == null ? "" : currentClientAccount.name + ": ";
+    prefix = prefix + getReportingMonthSheetName() + ": ";
+    log.info(prefix + content);
   }
 }

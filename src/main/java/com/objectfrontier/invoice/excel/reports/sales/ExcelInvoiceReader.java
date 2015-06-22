@@ -224,7 +224,7 @@ public class ExcelInvoiceReader {
 
   private Employee getEmployee() throws ReportException {
     try {
-      log ("ROW --> " + getCurrentRow());
+//      log ("ROW --> " + getCurrentRow());
       getNumeric(getCurrentRow(), 1);
     } catch (NullPointerException npe) {
       log("No more row exits, returning back");
@@ -292,7 +292,7 @@ public class ExcelInvoiceReader {
 
   private XSSFRow getCurrentRow() {
     XSSFRow row = reportingMonthSheet.getRow(currentRow);
-    log("Current Row = " + currentRow + " row data is " + row);
+    log("Current Row = " + currentRow );//+ " row data is " + row);
     return row;
   }
 
