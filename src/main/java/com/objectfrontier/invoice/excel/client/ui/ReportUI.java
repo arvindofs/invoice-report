@@ -71,7 +71,14 @@ public class ReportUI extends JFrame {
 
     handler = new Handler() {
       @Override public void publish(LogRecord record) {
-        log(record.getMessage());
+        StringBuffer buffer = new StringBuffer();
+        buffer.append(record.getLevel().getName()).append("\t");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy hh:mm:ss.SSS");
+        String time = dateFormat.format(new Date(record.getMillis()));
+        buffer.append(time).append("\t");
+        buffer.append(record.getSourceClassName()).append("[").append(record.getThreadID()).append("]\t");
+        buffer.append(record.getMessage());
+        log(buffer.toString());
       }
 
       @Override public void flush() {
