@@ -3,6 +3,9 @@ package com.objectfrontier.invoice.excel.system;
 import com.objectfrontier.invoice.excel.exception.ReportException;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Handler;
@@ -66,5 +69,12 @@ public final class Utils {
   public boolean isInvoiceFileName(String fileName) {
     final Pattern pattern = Pattern.compile(".*-" + INVOICE_FILE_NAME_SUFFIX + ".*xlsx$", Pattern.CASE_INSENSITIVE);
     return pattern.matcher(fileName).matches();
+  }
+
+  public String getStackTrace(Exception exception) {
+    Writer writer = new StringWriter();
+    PrintWriter printWriter = new PrintWriter(writer);
+    exception.printStackTrace(printWriter);
+    return writer.toString();
   }
 }

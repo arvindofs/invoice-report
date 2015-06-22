@@ -28,7 +28,7 @@ import static com.objectfrontier.invoice.excel.system.InvoiceUtil.*;
 public class ExcelInvoiceReader {
 
   private List<File> invoiceFiles;
-  private Logger log = Logger.getLogger(this.getClass().getName());
+  private Logger log = Logger.getLogger(this.getClass().getSimpleName());
 
   private DataCache cache = new DataCache();
 
@@ -47,8 +47,11 @@ public class ExcelInvoiceReader {
 
   private final Progress progress = Progress.instance();
 
+  private Utils utils;
+
   public ExcelInvoiceReader() {
-    log.addHandler(Utils.getInstance().getHandler());
+    utils = Utils.getInstance();
+    log.addHandler(utils.getHandler());
   }
 
   private void init() throws ReportException {
@@ -100,6 +103,7 @@ public class ExcelInvoiceReader {
     } catch (FileNotFoundException e) {
       log("Could not process file " + invoiceFile.getAbsolutePath());
       log(e.getMessage());
+      log(e);
     }
     return null;
   }
@@ -110,6 +114,7 @@ public class ExcelInvoiceReader {
       workbook = new XSSFWorkbook(fileInputStream);
     } catch (IOException e) {
       log("Error loading workbook " + e.getMessage());
+      log(e);
       workbook = null;
     }
   }
@@ -164,7 +169,7 @@ public class ExcelInvoiceReader {
     log("Reading project specific rows " + (currentRow < getLastRowIndex()-1));
 
     while (currentRow < getLastRowIndex()-1) {
-      log("Fetch row = " + currentRow + " of " + getLastRowIndex());
+      log("Fetch row = " + (currentRow+1) + " of " + getLastRowIndex());
       if (getCurrentRow() == null) break;
 
       if (SOW_ID_LABEL.equals(getString(getCurrentRow(), SOW_ID_LABEL_COL_INDEX))) {
@@ -210,8 +215,8 @@ public class ExcelInvoiceReader {
   private void addEmployees() throws ReportException {
     log("Starting to fetch employees " + (currentRow < getLastRowIndex() -1));
     while (currentRow < getLastRowIndex() -1) {
-      log("Fetch row = " + currentRow + " of " + getLastRowIndex());
-      log("Fetching employee from row " + currentRow);
+      log("Fetch row = " + (currentRow + 1) + " of " + getLastRowIndex());
+      log("Fetching employee from row " + (currentRow + 1));
       Employee employee = getEmployee();
       if (employee == null) return;
       log("Adding employee " + employee.firstName + " " + employee.lastName);
@@ -286,13 +291,13 @@ public class ExcelInvoiceReader {
 
   private XSSFRow getNextRow() {
     XSSFRow row = reportingMonthSheet.getRow(++currentRow);
-    log("Fetching Row = " + currentRow);
+    log("Fetching Row = " + (currentRow+1));
     return row;
   }
 
   private XSSFRow getCurrentRow() {
     XSSFRow row = reportingMonthSheet.getRow(currentRow);
-    log("Current Row = " + currentRow );//+ " row data is " + row);
+    log("Current Row = " + (currentRow +1));//+ " row data is " + row);
     return row;
   }
 
@@ -331,6 +336,9 @@ public class ExcelInvoiceReader {
   private void log(Object content) {
     String prefix = currentFile == null ? "" : currentFile.getName() + ": ";
     prefix = prefix + getReportingMonthSheetName() + ": ";
+    if (content instanceof Exception) {
+      content = "\nERROR: " + utils.getStackTrace((Exception)content);
+    }
     log.info(prefix + content);
   }
 }

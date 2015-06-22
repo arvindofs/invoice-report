@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class ExcelSalesReportWriter {
 
-  private Logger log = Logger.getLogger(this.getClass().getName());
+  private Logger log = Logger.getLogger(this.getClass().getSimpleName());
 
   private Map<String, ClientAccount> clientAccounts;
   private XSSFWorkbook workbook;
@@ -44,8 +44,11 @@ public class ExcelSalesReportWriter {
                   "Project Code", "Invoice Rate /location/month", "Business Days Worked", "Invoiced Amount",
                   "Shadow Resource", "Business Start Date of Month", "Business End Date of Month" };
 
+  private Utils utils;
+
   public ExcelSalesReportWriter(Map<String, ClientAccount> clientAccounts) {
-    log.addHandler(Utils.getInstance().getHandler());
+    utils = Utils.getInstance();
+    log.addHandler(utils.getHandler());
     this.clientAccounts = clientAccounts;
   }
 
@@ -100,7 +103,12 @@ public class ExcelSalesReportWriter {
     this.reportingYear = year;
     this.reportingMonth = month;
     log("Preparing to write report to target excel");
-    init(workbook);
+    try {
+      init(workbook);
+    } catch (ReportException e){
+      log(e);
+      return workbook;
+    }
     Iterator<String> iterator = clientAccounts.keySet().iterator();
     while(iterator.hasNext()) {
       currentClientAccount = clientAccounts.get(iterator.next());
@@ -184,6 +192,9 @@ public class ExcelSalesReportWriter {
   private void log(Object content) {
     String prefix = currentClientAccount == null ? "" : currentClientAccount.name + ": ";
     prefix = prefix + getReportingMonthSheetName() + ": ";
+    if (content instanceof Exception) {
+      content = "\nERROR: " + utils.getStackTrace((Exception)content);
+    }
     log.info(prefix + content);
   }
 }

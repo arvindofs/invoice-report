@@ -8,8 +8,11 @@ import com.objectfrontier.model.ClientAccount;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -17,6 +20,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -41,6 +45,9 @@ public class ReportUI extends JFrame {
   private JProgressBar reportProgressBar;
   private JTextArea logTextArea;
   private JScrollPane logScrollPane;
+  private JButton saveReportAsButton;
+  private JButton clearLogButton;
+  private JButton saveLogButton;
 
   private int currentYear;
   private int currentMonth;
@@ -49,9 +56,15 @@ public class ReportUI extends JFrame {
   private Progress progress = Progress.instance();
   boolean completed = false;
 
+  private XSSFWorkbook reportWorkbook;
+  private File outputFile;
+
   private Handler handler;
+  private Utils utils;
 
   public ReportUI() {
+
+    utils = Utils.getInstance();
     initializeLogHandler();
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy");
     currentYear = Integer.parseInt(dateFormat.format(new Date()));
@@ -72,11 +85,12 @@ public class ReportUI extends JFrame {
     handler = new Handler() {
       @Override public void publish(LogRecord record) {
         StringBuffer buffer = new StringBuffer();
-        buffer.append(record.getLevel().getName()).append("\t");
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy hh:mm:ss.SSS");
         String time = dateFormat.format(new Date(record.getMillis()));
         buffer.append(time).append("\t");
-        buffer.append(record.getSourceClassName()).append("[").append(record.getThreadID()).append("]\t");
+        buffer.append(record.getLevel().getName()).append("\t");
+        buffer.append("[").append(String.format("%s.%s", record.getLoggerName(),record.getSourceMethodName())).append(
+                        "]\t");
         buffer.append(record.getMessage());
         log(buffer.toString());
       }
@@ -90,7 +104,7 @@ public class ReportUI extends JFrame {
       }
     };
 
-    Utils.getInstance().setHandler(handler);
+    utils.setHandler(handler);
   }
 
   private void populateMonths() {
@@ -100,7 +114,7 @@ public class ReportUI extends JFrame {
     }
     monthList.setModel(listModel);
     monthList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-    monthList.setSelectedIndex(currentMonth-1);
+    monthList.setSelectedIndex(currentMonth - 1);
   }
 
   private void populateYears() {
@@ -135,6 +149,7 @@ public class ReportUI extends JFrame {
     });
 
     setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
     addWindowListener(new WindowAdapter() {
       public void windowClosing(WindowEvent e) {
         onCancel();
@@ -146,7 +161,55 @@ public class ReportUI extends JFrame {
         toggleGenerateReportButton();
       }
     });
+
+    clearLogButton.addActionListener(new ActionListener() {
+      @Override public void actionPerformed(ActionEvent e) {
+        onClearLog();
+      }
+    });
+
+    logTextArea.getDocument().addDocumentListener(new DocumentListener() {
+      @Override public void insertUpdate(DocumentEvent e) {
+        toggleClearLogButton();
+      }
+
+      @Override public void removeUpdate(DocumentEvent e) {
+        toggleClearLogButton();
+      }
+
+      @Override public void changedUpdate(DocumentEvent e) {
+        toggleClearLogButton();
+      }
+    });
+
+    saveReportAsButton.addActionListener(new ActionListener() {
+      @Override public void actionPerformed(ActionEvent e) {
+        onSaveReportAs();
+      }
+    });
   }
+
+  private void onSaveReportAs() {
+    String location;
+    JFileChooser outputFileChooser = new JFileChooser();
+    outputFileChooser.setDialogTitle("Select Invoice Home Folder Location");
+    outputFileChooser.setFileSelectionMode(JFileChooser.SAVE_DIALOG);
+    outputFileChooser.setFileFilter(new FileNameExtensionFilter("Excel 2010 and above", "xlsx"));
+    if (outputFileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+      location = outputFileChooser.getSelectedFile().getAbsolutePath();
+      if(!location.endsWith(".xlsx")) location = location + ".xlsx";
+      saveReport(new File(location));
+    }
+  }
+  private void onClearLog() {
+    logTextArea.setText("");
+  }
+
+  private void toggleClearLogButton() {
+    clearLogButton.setEnabled(logTextArea.getText().length() > 0);
+    saveLogButton.setEnabled(logTextArea.getText().length() > 0);
+  }
+
 
   private void toggleGenerateReportButton() {
     boolean enabled = true;
@@ -154,9 +217,9 @@ public class ReportUI extends JFrame {
       enabled = false;
     }
 
-    if (reportOutputField.getText().length() == 0) {
-     enabled = false;
-    }
+//    if (reportOutputField.getText().length() == 0) {
+//     enabled = false;
+//    }
 
     if (yearComboBox.getSelectedObjects().length == 0) {
       enabled = false;
@@ -166,7 +229,12 @@ public class ReportUI extends JFrame {
     }
 
     generateReportButton.setEnabled(enabled);
+    toggleSaveReportAsButton();
 
+  }
+
+  private void toggleSaveReportAsButton() {
+    saveReportAsButton.setEnabled(reportWorkbook != null);
   }
 
   private void onGenerateReport() {
@@ -191,11 +259,12 @@ public class ReportUI extends JFrame {
             Map<String, ClientAccount> clientAccounts = invoiceReader.buildSalesReport(year,month);
             publish(++counter);
             ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts);
-            XSSFWorkbook workbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
-            FileOutputStream fos = new FileOutputStream(getOutputFile());
-            workbook.write(fos);;
-            fos.flush();
-            fos.close();
+            reportWorkbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
+            if (reportWorkbook != null) {
+              if (reportOutputField.getText().length() > 0)
+                saveReport(getOutputFile());
+              toggleSaveReportAsButton();
+            }
             publish(++counter);
           } catch (Exception ex) {
             ex.printStackTrace();
@@ -221,6 +290,28 @@ public class ReportUI extends JFrame {
 
   }
 
+  private void saveReport(File file) {
+    FileOutputStream fos = null;
+    try {
+      fos = new FileOutputStream(file);
+      reportWorkbook.write(fos);
+      fos.flush();
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      log("Exception occured " + ex.getMessage());
+    } finally {
+      if (fos != null) {
+        try {
+          fos.close();
+        } catch (IOException e) {
+          log("Error occured on closing output stream");
+          log(e.getMessage());
+          e.printStackTrace();
+        }
+      }
+    }
+  }
+
   private void toggleButtonEnablement() {
     homeBrowseButton.setEnabled(!homeBrowseButton.isEnabled());
     outputBrowseButton.setEnabled(!outputBrowseButton.isEnabled());
@@ -229,6 +320,7 @@ public class ReportUI extends JFrame {
   }
 
   private XSSFWorkbook loadWorkbook() {
+    if (reportOutputField.getText().length() == 0) return null;
     try {
       File file = getOutputFile();
       if (!file.exists()) return null;
@@ -268,8 +360,11 @@ public class ReportUI extends JFrame {
     System.exit(0);
   }
 
-  private void log(Object o) {
-    logTextArea.append(o + "\n");
+  private void log(Object content) {
+    if (content instanceof Exception) {
+      content = "\nERROR: " + utils.getStackTrace((Exception)content);
+    }
+    logTextArea.append(content + "\n");
   }
 
   public static void main(String[] args) {
