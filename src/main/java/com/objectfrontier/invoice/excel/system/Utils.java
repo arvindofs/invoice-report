@@ -1,8 +1,11 @@
 package com.objectfrontier.invoice.excel.system;
 
+import com.objectfrontier.invoice.excel.exception.ReportException;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Handler;
 import java.util.regex.Pattern;
 
 /**
@@ -10,11 +13,17 @@ import java.util.regex.Pattern;
  */
 public final class Utils {
 
-  static final String DROPBOX_HOME = "DROPBOX_HOME";
-
   static final String INVOICE_FILE_NAME_SUFFIX = "Invoice-Detail-";//2015.xlsx";
 
-  public static String getHome() {return System.getProperty(DROPBOX_HOME, "/Users/ahariharan/Documents/ofs/confidential/INV/util.test/INV");}
+  private final Progress progress = Progress.instance();
+
+  private Handler handler;
+
+  public static String getHome() throws ReportException{
+    String home = System.getProperty(InvoiceUtil.DROPBOX_HOME, "");
+    if (home.equals("")) throw new ReportException ("Please provide your drop box home in VM parameter");
+    return home;
+  }
 
   private static Utils utils = new Utils();
 
@@ -22,7 +31,7 @@ public final class Utils {
 
   private Utils(){}
 
-  public List<File> getInvoiceFiles() {
+  public List<File> getInvoiceFiles() throws ReportException {
     List<File> invoiceFileList = new ArrayList();
     File file = new File(getHome());
     getFile(file, INVOICE_FILE_NAME_SUFFIX, invoiceFileList);
@@ -41,10 +50,17 @@ public final class Utils {
       String fileName = eachFile.getName();
       if (fileName.startsWith("~") || !isInvoiceFileName(fileName))
         continue;
-
       System.out.println(eachFile.getAbsolutePath());
       invoiceFileList.add(eachFile);
     }
+  }
+
+  public void setHandler(Handler handler) {
+    this.handler = handler;
+  }
+
+  public Handler getHandler() {
+    return this.handler;
   }
 
   public boolean isInvoiceFileName(String fileName) {

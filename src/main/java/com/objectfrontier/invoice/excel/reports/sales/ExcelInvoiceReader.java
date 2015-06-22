@@ -2,6 +2,7 @@ package com.objectfrontier.invoice.excel.reports.sales;
 
 import com.objectfrontier.invoice.excel.exception.ReportException;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil;
+import com.objectfrontier.invoice.excel.system.Progress;
 import com.objectfrontier.invoice.excel.system.Utils;
 import com.objectfrontier.localcache.DataCache;
 import com.objectfrontier.model.*;
@@ -44,11 +45,13 @@ public class ExcelInvoiceReader {
   private ClientAccount currentClientAccount;
   private Project currentProject;
 
+  private final Progress progress = Progress.instance();
 
   public ExcelInvoiceReader() {
+    log.addHandler(Utils.getInstance().getHandler());
   }
 
-  private void init() {
+  private void init() throws ReportException {
     resetCurrentRow();
     cache.clientAccountCache.clear();
     cache.projectCache.clear();
@@ -144,7 +147,7 @@ public class ExcelInvoiceReader {
     if (currentClientAccount == null) {
       addClient(clientName);
     } else {
-      skipRows(1);
+      skipRows(0);
     }
     skipRows(4);
     readProjectInvoice();
@@ -158,8 +161,10 @@ public class ExcelInvoiceReader {
   }
 
   private void readProjectInvoice() throws ReportException {
-    log("Rading project specific rows");
+    log("Reading project specific rows " + (currentRow < getLastRowIndex()-1));
+
     while (currentRow < getLastRowIndex()-1) {
+      log("Fetch row = " + currentRow + " of " + getLastRowIndex());
       if (getCurrentRow() == null) break;
 
       if (SOW_ID_LABEL.equals(getString(getCurrentRow(), SOW_ID_LABEL_COL_INDEX))) {
@@ -203,8 +208,9 @@ public class ExcelInvoiceReader {
   }
 
   private void addEmployees() throws ReportException {
-    log("Starting to fetch employees");
+    log("Starting to fetch employees " + (currentRow < getLastRowIndex() -1));
     while (currentRow < getLastRowIndex() -1) {
+      log("Fetch row = " + currentRow + " of " + getLastRowIndex());
       log("Fetching employee from row " + currentRow);
       Employee employee = getEmployee();
       if (employee == null) return;
@@ -242,6 +248,7 @@ public class ExcelInvoiceReader {
     billing.workLocation = employee.location;
     employee.billing = billing;
     log(" name --> " + employee.firstName + " " + employee.lastName);
+    progress.addActivity();
     return employee;
   }
 
@@ -251,15 +258,15 @@ public class ExcelInvoiceReader {
       log("Fetching shadow resource data");
       Employee employee = getEmployee();
       if (employee == null) return;
-      log.info("Shadow resource name = " + employee.firstName + " " + employee.lastName);
+      log("Shadow resource name = " + employee.firstName + " " + employee.lastName);
       employee.shadow = true;
       String code = getString(getCurrentRow(), SHADOW_RESOURCE_SOW_CODE_COL_INDEX);
       Project project = cache.getProject(code);
       if (project != null) {
-        log.info("Adding shadow resource to project employee list");
+        log("Adding shadow resource to project employee list");
         project.employees.add(employee);
       } else {
-        log.info("No valid project assigned to shadow resource , hence not adding " + employee.firstName + " "
+        log("No valid project assigned to shadow resource , hence not adding " + employee.firstName + " "
                         + employee.lastName);
       }
       if (SOW_TOTAL_LABEL.equals(getString(getNextRow(), SOW_TOTAL_LABEL_COL_INDEX))) break;
@@ -269,7 +276,7 @@ public class ExcelInvoiceReader {
   }
 
   private void skipRows(int count) {
-    log("skipping " + count + " rows");
+    log("skipping " + (count + 1) + " rows");
     currentRow += count + 1;
   }
 
@@ -324,7 +331,6 @@ public class ExcelInvoiceReader {
   private void log(Object content) {
     String prefix = currentFile == null ? "" : currentFile.getName() + ": ";
     prefix = prefix + getReportingMonthSheetName() + ": ";
-//    log.info(prefix + content);
-    System.out.println(prefix + content);
+    log.info(prefix + content);
   }
 }

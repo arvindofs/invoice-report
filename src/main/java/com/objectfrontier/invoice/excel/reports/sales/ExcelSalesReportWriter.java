@@ -2,18 +2,28 @@ package com.objectfrontier.invoice.excel.reports.sales;
 
 import com.objectfrontier.invoice.excel.exception.ReportException;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil.MONTH;
+import com.objectfrontier.invoice.excel.system.Progress;
+import com.objectfrontier.invoice.excel.system.Utils;
 import com.objectfrontier.model.ClientAccount;
 import com.objectfrontier.model.Employee;
 import com.objectfrontier.model.Project;
-import org.apache.poi.xssf.usermodel.*;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Created by ahariharan on 6/19/15.
  */
 public class ExcelSalesReportWriter {
+
+  private Logger log = Logger.getLogger(this.getClass().getName());
 
   private Map<String, ClientAccount> clientAccounts;
   private XSSFWorkbook workbook;
@@ -28,19 +38,14 @@ public class ExcelSalesReportWriter {
   private Project currentProject;
   private Employee currentEmployee;
 
-  // Sl No	First Name 	Last Name	Role	Location	Client Name	Project Code	Invoice Rate/Resource	# of days worked	Invoice Amount	Shadow Resource
-
-  private enum DataType {NUMERIC, STRING, DATE, BOOLEAN}
+  private Progress progress = Progress.instance();
 
   private String[] columns = new String[] { "Sl No", "First Name", "Last Name", "Role", "Work Location", "Client Name",
-                  "Project Code", "Invoice Rate /Resource", "Business Days Worked", "Invoiced Amount",
+                  "Project Code", "Invoice Rate /location/month", "Business Days Worked", "Invoiced Amount",
                   "Shadow Resource", "Business Start Date of Month", "Business End Date of Month" };
 
-  private DataType[] columntype = new DataType[] { DataType.NUMERIC, DataType.STRING, DataType.STRING, DataType.STRING,
-                  DataType.STRING, DataType.STRING, DataType.STRING, DataType.NUMERIC, DataType.NUMERIC,
-                  DataType.NUMERIC, DataType.BOOLEAN, DataType.DATE, DataType.DATE };
-
   public ExcelSalesReportWriter(Map<String, ClientAccount> clientAccounts) {
+    log.addHandler(Utils.getInstance().getHandler());
     this.clientAccounts = clientAccounts;
   }
 
@@ -58,7 +63,6 @@ public class ExcelSalesReportWriter {
       this.workbook.removeSheetAt(existingWorkbook.getSheetIndex(sheet));
     }
     sheet = this.workbook.createSheet(getReportingMonthSheetName());
-
     writeHeader();
   }
 
@@ -67,18 +71,17 @@ public class ExcelSalesReportWriter {
     XSSFRow row = sheet.createRow(thisRow());
     for(String columnName : columns) {
       XSSFCell cell = row.createCell(thisColumn()) ;
-//      headerStyle(cell);
       cell.setCellValue(columnName);
     }
   }
 
-  private void headerStyle (XSSFCell cell) {
-    XSSFCellStyle cellStyle = cell.getCellStyle();
-    cellStyle.setAlignment(XSSFCellStyle.ALIGN_CENTER);
-    XSSFFont font = new XSSFFont(cellStyle.getFont().getCTFont(), cellStyle.getFont().getIndex());
-    font.setBold(true);
-    cellStyle.setFont(font);
-  }
+//  private XSSFFont headerFont() {
+//    XSSFCellStyle cellStyle = workbook.createCellStyle();
+//    cellStyle.setAlignment(XSSFCellStyle.ALIGN_CENTER);
+//    XSSFFont font = workbook.createFont();
+//    font.setBoldweight(XSSFFont.BOLDWEIGHT_BOLD);
+//    return font;
+//  }
 
   private int thisRow() {
     return currentRowNum++;
@@ -96,12 +99,15 @@ public class ExcelSalesReportWriter {
     this.reportingYear = year;
     this.reportingMonth = month;
     init(workbook);
-    Iterator iterator = clientAccounts.keySet().iterator();
+    Iterator<String> iterator = clientAccounts.keySet().iterator();
     while(iterator.hasNext()) {
       currentClientAccount = clientAccounts.get(iterator.next());
       writeClientSales();
     }
 
+    for (int x = 0; x < columns.length; x++) {
+      sheet.autoSizeColumn(x);
+    }
     return this.workbook;
   }
 
@@ -122,6 +128,9 @@ public class ExcelSalesReportWriter {
 
   private void writeDetails() {
     XSSFRow row = sheet.createRow(thisRow());
+    XSSFCell startDateCell = null;
+    XSSFCell endDateCell = null;
+    XSSFCell billableDaysCell = null;
     createCell(row).setCellValue(currentRowNum-1);
     createCell(row).setCellValue(currentEmployee.firstName);
     createCell(row).setCellValue(currentEmployee.lastName);
@@ -130,12 +139,36 @@ public class ExcelSalesReportWriter {
     createCell(row).setCellValue(currentClientAccount.name);
     createCell(row).setCellValue(currentProject.code);
     createCell(row).setCellValue(currentEmployee.billing.rate);
-    createCell(row).setCellValue(currentEmployee.billing.billableDays);
-    createCell(row).setCellValue(currentEmployee.billing.billableDays);
-    createCell(row).setCellValue(currentEmployee.shadow ? "Yes" : "No");
-    createCell(row).setCellValue(currentEmployee.billing.startDate);
-    createCell(row).setCellValue(currentEmployee.billing.endDate);
 
+    billableDaysCell = createCell(row);
+    billableDaysCell.setCellValue(currentEmployee.billing.billableDays);;
+
+    createCell(row).setCellValue(currentEmployee.billing.billed);
+    createCell(row).setCellValue(currentEmployee.shadow ? "Yes" : "No");
+
+    startDateCell = createCell(row);
+    startDateCell.setCellValue(currentEmployee.billing.startDate);
+    startDateCell.setCellStyle(getDateFormatStyle());
+
+    endDateCell = createCell(row);
+    endDateCell.setCellValue(currentEmployee.billing.endDate);
+    endDateCell.setCellStyle(getDateFormatStyle());
+
+    if(currentEmployee.shadow) {
+      billableDaysCell.setCellFormula(
+                      String.format("NETWORKDAYS(%s,%s)-%2f", startDateCell.getReference(), endDateCell.getReference(),
+                                      currentEmployee.billing.ptoDays));
+    }
+
+    progress.activityDone();
+  }
+
+  private CellStyle getDateFormatStyle() {
+    CellStyle cellStyle = workbook.createCellStyle();
+    CreationHelper createHelper = workbook.getCreationHelper();
+    cellStyle.setDataFormat(
+                    createHelper.createDataFormat().getFormat("dd-mmm-yyyy"));
+    return cellStyle;
   }
 
   private XSSFCell createCell(XSSFRow row) {

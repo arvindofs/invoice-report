@@ -54,4 +54,6 @@ public class InvoiceUtil {
 
   public static enum MONTH {Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Nov, Dec};
 
+  public static final String DROPBOX_HOME = "DROPBOX_HOME";
+
 }

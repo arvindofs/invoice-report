@@ -17,6 +17,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
@@ -29,11 +31,28 @@ public class UtilsTest {
   ExcelInvoiceReader invoiceReader ;
   File file;
   Utils utils;
+  Handler handler;
   @Before
   public void setUp() throws Exception {
+
+    handler = new Handler() {
+      @Override public void publish(LogRecord record) {
+
+      }
+
+      @Override public void flush() {
+
+      }
+
+      @Override public void close() throws SecurityException {
+
+      }
+    };
+
     file = new File("/Users/ahariharan/Documents/ofs/Sales-Report.xlsx");
-    invoiceReader = new ExcelInvoiceReader();
     utils = Utils.getInstance();
+    utils.setHandler(handler);
+    invoiceReader = new ExcelInvoiceReader();
 
   }
 
@@ -69,10 +88,10 @@ public class UtilsTest {
   @Test
   public void testbuildSalesReport() throws Exception {
     generateReport(MONTH.Jan, 2015);
-//    generateReport(MONTH.Feb, 2015);
-//    generateReport(MONTH.Mar, 2015);
-//    generateReport(MONTH.Apr, 2015);
-//    generateReport(MONTH.Jun, 2015);
+    generateReport(MONTH.Feb, 2015);
+    generateReport(MONTH.Mar, 2015);
+    generateReport(MONTH.Apr, 2015);
+    generateReport(MONTH.Jun, 2015);
 
   }
 
