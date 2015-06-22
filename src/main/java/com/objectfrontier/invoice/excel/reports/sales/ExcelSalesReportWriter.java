@@ -106,7 +106,7 @@ public class ExcelSalesReportWriter {
     try {
       init(workbook);
     } catch (ReportException e){
-      log(e);
+      log(String.format("Initialization failed, skipping report generation for %4d,%s", year, month.toString()));
       return workbook;
     }
     Iterator<String> iterator = clientAccounts.keySet().iterator();

@@ -13,6 +13,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.DefaultCaret;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -78,6 +79,8 @@ public class ReportUI extends JFrame {
     populateYears();
     toggleGenerateReportButton();
     addListeners();
+    DefaultCaret caret = (DefaultCaret)logTextArea.getCaret();
+    caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
   }
 
   private void initializeLogHandler() {
@@ -199,6 +202,7 @@ public class ReportUI extends JFrame {
       location = outputFileChooser.getSelectedFile().getAbsolutePath();
       if(!location.endsWith(".xlsx")) location = location + ".xlsx";
       saveReport(new File(location));
+      JOptionPane.showMessageDialog(this, "Report Saved.");
     }
   }
   private void onClearLog() {
@@ -210,16 +214,15 @@ public class ReportUI extends JFrame {
     saveLogButton.setEnabled(logTextArea.getText().length() > 0);
   }
 
-
   private void toggleGenerateReportButton() {
     boolean enabled = true;
     if (invoiceHomeField.getText().length() == 0) {
       enabled = false;
     }
 
-//    if (reportOutputField.getText().length() == 0) {
-//     enabled = false;
-//    }
+    if (reportOutputField.getText().length() == 0) {
+     enabled = false;
+    }
 
     if (yearComboBox.getSelectedObjects().length == 0) {
       enabled = false;
@@ -261,14 +264,13 @@ public class ReportUI extends JFrame {
             ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts);
             reportWorkbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
             if (reportWorkbook != null) {
-              if (reportOutputField.getText().length() > 0)
-                saveReport(getOutputFile());
+              if (reportOutputField.getText().length() > 0) {saveReport(getOutputFile());}
               toggleSaveReportAsButton();
             }
             publish(++counter);
           } catch (Exception ex) {
             ex.printStackTrace();
-            log("Exception occured " + ex.getMessage());
+            log("Exception occurred " + ex.getMessage());
           }
         }
         completed = true;
@@ -372,6 +374,5 @@ public class ReportUI extends JFrame {
     dialog.pack();
     dialog.setLocationRelativeTo(null);
     dialog.setVisible(true);
-//    System.exit(0);
   }
 }
