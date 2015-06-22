@@ -58,7 +58,6 @@ public class ReportUI extends JFrame {
     dateFormat= new SimpleDateFormat("MM");
     currentMonth = Integer.parseInt(dateFormat.format(new Date()));
 
-
     setContentPane(contentPane);
     setTitle("Sales Report Utility");
     getRootPane().setDefaultButton(quitButton);
@@ -269,6 +268,7 @@ public class ReportUI extends JFrame {
   public static void main(String[] args) {
     ReportUI dialog = new ReportUI();
     dialog.pack();
+    dialog.setLocationRelativeTo(null);
     dialog.setVisible(true);
 //    System.exit(0);
   }
