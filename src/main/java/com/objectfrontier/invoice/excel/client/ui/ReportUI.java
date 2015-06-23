@@ -58,9 +58,7 @@ public class ReportUI extends JFrame {
   boolean completed = false;
 
   private XSSFWorkbook reportWorkbook;
-  private File outputFile;
 
-  private Handler handler;
   private Utils utils;
 
   public ReportUI() {
@@ -85,14 +83,14 @@ public class ReportUI extends JFrame {
 
   private void initializeLogHandler() {
 
-    handler = new Handler() {
+    Handler handler = new Handler() {
       @Override public void publish(LogRecord record) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy hh:mm:ss.SSS");
         String time = dateFormat.format(new Date(record.getMillis()));
         buffer.append(time).append("\t");
         buffer.append(record.getLevel().getName()).append("\t");
-        buffer.append("[").append(String.format("%s.%s", record.getLoggerName(),record.getSourceMethodName())).append(
+        buffer.append("[").append(String.format("%s.%s", record.getLoggerName(), record.getSourceMethodName())).append(
                         "]\t");
         buffer.append(record.getMessage());
         log(buffer.toString());
@@ -121,9 +119,8 @@ public class ReportUI extends JFrame {
   }
 
   private void populateYears() {
-    for (int i=2015;i <= currentYear; i++) {
+    for (int i=2015;i <= currentYear; i++)
       yearComboBox.addItem(i);
-    }
     yearComboBox.setSelectedItem(currentYear);
   }
 
@@ -190,13 +187,19 @@ public class ReportUI extends JFrame {
         onSaveReportAs();
       }
     });
+
+    saveLogButton.addActionListener(new ActionListener() {
+      @Override public void actionPerformed(ActionEvent e) {
+        onSaveLog();
+      }
+    });
   }
 
   private void onSaveReportAs() {
     String location;
     JFileChooser outputFileChooser = new JFileChooser();
     outputFileChooser.setDialogTitle("Select Invoice Home Folder Location");
-    outputFileChooser.setFileSelectionMode(JFileChooser.SAVE_DIALOG);
+    outputFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
     outputFileChooser.setFileFilter(new FileNameExtensionFilter("Excel 2010 and above", "xlsx"));
     if (outputFileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
       location = outputFileChooser.getSelectedFile().getAbsolutePath();
@@ -205,6 +208,40 @@ public class ReportUI extends JFrame {
       JOptionPane.showMessageDialog(this, "Report Saved.");
     }
   }
+
+  private void onSaveLog() {
+    String str = logTextArea.getText();
+    String location ;
+    try {
+      JFileChooser outputFileChooser = new JFileChooser();
+      outputFileChooser.setDialogTitle("Select Invoice Home Folder Location");
+      outputFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+      outputFileChooser.setFileFilter(new FileNameExtensionFilter("Compressed Log File", "gzip"));
+      if (outputFileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+        location = outputFileChooser.getSelectedFile().getAbsolutePath();
+        if(!location.endsWith(".gzip")) location = location + ".gzip";
+
+        JOptionPane.showMessageDialog(this, "Log Saved.");
+      } else {
+        return;
+      }
+
+//      ByteArrayOutputStream out = new ByteArrayOutputStream();
+//      GZIPOutputStream gzip = new GZIPOutputStream(out);
+//      gzip.write(str.getBytes());
+//      gzip.close();
+//      str = out.toString("ISO-8859-1");
+//      log(str);
+      FileOutputStream fos = new FileOutputStream(new File(location));
+      fos.write(str.getBytes());
+      fos.flush();
+      fos.close();
+    } catch (Exception ex) {
+      log(ex);
+      JOptionPane.showMessageDialog(this, "Something went wrong :  when saving log");
+    }
+  }
+
   private void onClearLog() {
     logTextArea.setText("");
   }
@@ -237,7 +274,7 @@ public class ReportUI extends JFrame {
   }
 
   private void toggleSaveReportAsButton() {
-    saveReportAsButton.setEnabled(reportWorkbook != null);
+    saveReportAsButton.setEnabled(reportWorkbook != null && generateReportButton.isEnabled());
   }
 
   private void onGenerateReport() {
@@ -251,16 +288,18 @@ public class ReportUI extends JFrame {
       @Override
       protected Boolean doInBackground() throws Exception {
         int counter = 0;
-        reportProgressBar.setValue(0);;
+        reportProgressBar.setValue(0);
         reportProgressBar.setMaximum(monthList.getSelectedIndices().length * 2);
-
+        log("I'm working for you to generate the report you requested");
         for(int index : monthList.getSelectedIndices()) {
           try {
             reportProgressBar.setStringPainted(true);
+            reportProgressBar.setString("Workign for you...");
             MONTH month = MONTH.valueOf(listModel.getElementAt(index).toString());
             int year = Integer.parseInt(yearComboBox.getSelectedItem().toString());
             Map<String, ClientAccount> clientAccounts = invoiceReader.buildSalesReport(year,month);
             publish(++counter);
+            reportProgressBar.setString("Writing report...");
             ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts);
             reportWorkbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
             if (reportWorkbook != null) {
@@ -270,26 +309,26 @@ public class ReportUI extends JFrame {
             publish(++counter);
           } catch (Exception ex) {
             ex.printStackTrace();
-            log("Exception occurred " + ex.getMessage());
+            log("Something went wrong :  " + ex.getMessage());
           }
         }
+        reportProgressBar.setString("Woohoo!!! you can save additional copy");
         completed = true;
         return true;
       }
 
       @Override protected void process(List<Integer> chunks) {
-        reportProgressBar.setValue(chunks.get(0).intValue());
+        reportProgressBar.setValue(chunks.get(0));
       }
 
       @Override protected void done() {
         reportProgressBar.setValue(monthList.getSelectedIndices().length * 2);
         toggleButtonEnablement();
-        JOptionPane.showMessageDialog(reportProgressBar.getRootPane(), "Sales report generation completed.");
+        toggleSaveReportAsButton();
+        JOptionPane.showMessageDialog(reportProgressBar.getRootPane(), "Woohoo!!! I think i generated the report you asked.\nLet me know what you think.");
       }
     };
-
     worker.execute();
-
   }
 
   private void saveReport(File file) {
@@ -300,13 +339,13 @@ public class ReportUI extends JFrame {
       fos.flush();
     } catch (Exception ex) {
       ex.printStackTrace();
-      log("Exception occured " + ex.getMessage());
+      log("Something went wrong :  " + ex.getMessage());
     } finally {
       if (fos != null) {
         try {
           fos.close();
         } catch (IOException e) {
-          log("Error occured on closing output stream");
+          log("Something went wrong :  on closing output stream");
           log(e.getMessage());
           e.printStackTrace();
         }

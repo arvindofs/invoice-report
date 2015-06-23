@@ -101,7 +101,7 @@ public class ExcelInvoiceReader {
       return new FileInputStream(invoiceFile);
 
     } catch (FileNotFoundException e) {
-      log("Could not process file " + invoiceFile.getAbsolutePath());
+      log("Sorry I Could not process file " + invoiceFile.getAbsolutePath());
       log(e.getMessage());
       log(e);
     }
@@ -113,7 +113,7 @@ public class ExcelInvoiceReader {
     try {
       workbook = new XSSFWorkbook(fileInputStream);
     } catch (IOException e) {
-      log("Error loading workbook " + e.getMessage());
+      log("I'm bugged, but don't worry this is not critical.  I'm moving forwarad" + e.getMessage());
       log(e);
       workbook = null;
     }
@@ -137,13 +137,14 @@ public class ExcelInvoiceReader {
     try {
       readClientAccount();
     }  catch (ReportException exception) {
-      log("Error occured during report generation for " + invoiceFile.getAbsolutePath());
-      log("Root cause: " + exception.getMessage());
+      log("I'm bugged, I fear I can't read further to analyze " +invoiceFile.getAbsolutePath());
+      log("Share the root cause: " + exception.getMessage());
+      log(exception);
     }
   }
 
   private void readClientAccount() throws ReportException {
-    log("Reading client details");
+    log("Hold on checking client details");
     if (!getString(getCurrentRow(), CLIENT_NAME_LABEL_COL_INDEX).equals(CLIENT_NAME_LABEL))
       throw new ReportException("Monthly invoice sheet is not in valid format.");
 
@@ -160,13 +161,13 @@ public class ExcelInvoiceReader {
   }
 
   private void addClient(String clientName) {
-    log("Adding client to cache");
+    log("I'm caching " + clientName + " details so I can work efficiently for you!!!");
     currentClientAccount = cache.addClient(clientName);
     currentClientAccount.code = getString(getNextRow(), CLIENT_CODE_COL_INDEX);
   }
 
   private void readProjectInvoice() throws ReportException {
-    log("Reading project specific rows " + (currentRow < getLastRowIndex()-1));
+    log("Ssshhhh.... about to read project invoice details" + (currentRow < getLastRowIndex()-1));
 
     while (currentRow < getLastRowIndex()-1) {
       log("Fetch row = " + (currentRow+1) + " of " + getLastRowIndex());
@@ -195,7 +196,7 @@ public class ExcelInvoiceReader {
           addShadowResources();
         }
       } catch (NullPointerException npe) {
-        log("No Shadow resources found and not processing ?");
+        log("Looks like no shadow resources in this project...");
       }
 
     }
@@ -213,7 +214,7 @@ public class ExcelInvoiceReader {
   }
 
   private void addEmployees() throws ReportException {
-    log("Starting to fetch employees " + (currentRow < getLastRowIndex() -1));
+    log("I'm about to read employee details from invoice" + (currentRow < getLastRowIndex() -1));
     while (currentRow < getLastRowIndex() -1) {
       log("Fetch row = " + (currentRow + 1) + " of " + getLastRowIndex());
       log("Fetching employee from row " + (currentRow + 1));
