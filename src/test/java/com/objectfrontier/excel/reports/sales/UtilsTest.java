@@ -5,6 +5,7 @@ import com.objectfrontier.invoice.excel.reports.sales.ExcelSalesReportWriter;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil.MONTH;
 import com.objectfrontier.invoice.excel.system.Utils;
+import com.objectfrontier.job.Task;
 import com.objectfrontier.localcache.DataCache;
 import com.objectfrontier.model.ClientAccount;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -38,6 +39,7 @@ public class UtilsTest {
   Utils utils;
   Handler handler;
   StringBuilder logCollector;
+  Task task;
   @Before
   public void setUp() throws Exception {
     logCollector = new StringBuilder();
@@ -64,11 +66,25 @@ public class UtilsTest {
       }
     };
 
+    task = new Task() {
+      @Override public void add() {
+
+      }
+
+      @Override public void done() {
+
+      }
+
+      @Override public void restart() {
+
+      }
+    };
+
     file = new File("/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/All-Client-JUnit-Test-Sales-Report.xlsx");
     utils = Utils.getInstance();
     utils.setHandler(handler);
     System.setProperty(DROPBOX_HOME, "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV");
-    invoiceReader = new ExcelInvoiceReader();
+    invoiceReader = new ExcelInvoiceReader(task);
 
   }
 
@@ -129,7 +145,7 @@ public class UtilsTest {
 
   private void generateReport(MONTH month, int year) throws Exception {
     Map<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
-    ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts);
+    ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts, task);
     XSSFWorkbook workbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
     FileOutputStream fos = new FileOutputStream(file);
     workbook.write(fos);

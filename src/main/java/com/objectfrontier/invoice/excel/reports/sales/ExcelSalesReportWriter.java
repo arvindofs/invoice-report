@@ -3,6 +3,7 @@ package com.objectfrontier.invoice.excel.reports.sales;
 import com.objectfrontier.invoice.excel.exception.ReportException;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil.MONTH;
 import com.objectfrontier.invoice.excel.system.Utils;
+import com.objectfrontier.job.Task;
 import com.objectfrontier.model.ClientAccount;
 import com.objectfrontier.model.Employee;
 import com.objectfrontier.model.Project;
@@ -41,13 +42,14 @@ public class ExcelSalesReportWriter {
                   "Shadow Resource", "Business Start Date of Month", "Business End Date of Month" };
 
   private Utils utils;
+  private Task task;
 
-  public ExcelSalesReportWriter(Map<String, ClientAccount> clientAccounts) {
+  public ExcelSalesReportWriter(Map<String, ClientAccount> clientAccounts, Task task) {
     utils = Utils.getInstance();
-
     log.removeHandler(utils.getHandler());
     log.addHandler(utils.getHandler());
     this.clientAccounts = clientAccounts;
+    this.task = task;
   }
 
   private String getReportingMonthSheetName() {
@@ -170,6 +172,7 @@ public class ExcelSalesReportWriter {
                                       currentEmployee.billing.ptoDays));
     }
     log(String.format("Finished writing deatils for employee: %s %s", currentEmployee.firstName, currentEmployee.lastName));
+    task.done();
   }
 
   private CellStyle getDateFormatStyle() {

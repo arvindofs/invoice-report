@@ -3,6 +3,7 @@ package com.objectfrontier.invoice.excel;
 import com.objectfrontier.invoice.excel.exception.ReportException;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil;
 import com.objectfrontier.invoice.excel.system.Utils;
+import com.objectfrontier.job.Task;
 import com.objectfrontier.localcache.DataCache;
 import com.objectfrontier.model.*;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -46,7 +47,10 @@ public class ExcelInvoiceReader {
 
   private Utils utils;
 
-  public ExcelInvoiceReader() {
+  private Task task;
+
+  public ExcelInvoiceReader(Task task) {
+    this.task = task;
     utils = Utils.getInstance();
     log.removeHandler(utils.getHandler());
     log.addHandler(utils.getHandler());
@@ -57,7 +61,6 @@ public class ExcelInvoiceReader {
     this.reportingYear = year;
     this.reportingMonth = month;
     init();
-
     log("Collecting data for sales report");
     for(File file : invoiceFiles) {
       resetCurrent();
@@ -65,7 +68,6 @@ public class ExcelInvoiceReader {
         log("Something i did not expect, so could not process " + file.getAbsolutePath());
       }
     }
-
     return cache.clientAccountCache;
   }
 
@@ -269,6 +271,7 @@ public class ExcelInvoiceReader {
           log(String.format("I found employee %s, %s, working for SOW/Project Code %s", employee.firstName,
                           employee.lastName,
                           currentProject.code));
+          task.add();
 
         } else {
           log("WARNING: Employee name was found in row " + (currentRow + 1) + " but few other details were missing so ignoring");
@@ -297,6 +300,7 @@ public class ExcelInvoiceReader {
         if (project != null) {
           log("Adding shadow resource to project employee list");
           project.employees.add(employee);
+          task.add();
         } else {
           log("WARNING: No valid project assigned to shadow resource , hence not adding " + employee.firstName + " "
                           + employee.lastName);
