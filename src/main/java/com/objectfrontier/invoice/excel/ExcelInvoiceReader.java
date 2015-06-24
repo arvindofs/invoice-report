@@ -130,6 +130,7 @@ public class ExcelInvoiceReader {
   }
 
   private void addClient(String clientName) {
+    log("Total Row Count is " + (getLastRowIndex() +1));
     log("I'm caching " + clientName + " details so I can work efficiently for you!!!");
     currentClientAccount = cache.addClient(clientName);
     currentClientAccount.code = getString(getNextRow(), CLIENT_CODE_COL_INDEX);
@@ -186,7 +187,6 @@ public class ExcelInvoiceReader {
   private XSSFRow getNextRow() {
     XSSFRow row = reportingMonthSheet.getRow(++currentRow);
     log("Fetching Row = " + (currentRow + 1));
-    log("Total Row Count is " + (getLastRowIndex() +1));
     return row;
   }
 
@@ -253,8 +253,7 @@ public class ExcelInvoiceReader {
       } catch (Exception e) {
         log(e);
         log("Ignoring above exception and continuing further");
-        if (currentRow < getLastRowIndex() -1) getNextRow();
-        continue;
+        if (currentRow <= getLastRowIndex()) getNextRow();
       }
     }
   }
