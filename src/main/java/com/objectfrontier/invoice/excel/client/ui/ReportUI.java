@@ -1,8 +1,7 @@
 package com.objectfrontier.invoice.excel.client.ui;
 
-import com.objectfrontier.invoice.excel.reports.sales.ExcelInvoiceReader;
+import com.objectfrontier.invoice.excel.ExcelInvoiceReader;
 import com.objectfrontier.invoice.excel.reports.sales.ExcelSalesReportWriter;
-import com.objectfrontier.invoice.excel.system.Progress;
 import com.objectfrontier.invoice.excel.system.Utils;
 import com.objectfrontier.model.ClientAccount;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -54,8 +53,9 @@ public class ReportUI extends JFrame {
   private int currentMonth;
   private ExcelInvoiceReader invoiceReader;
 
-  private Progress progress = Progress.instance();
+
   boolean completed = false;
+  boolean anyError = false;
 
   private XSSFWorkbook reportWorkbook;
 
@@ -79,6 +79,19 @@ public class ReportUI extends JFrame {
     addListeners();
     DefaultCaret caret = (DefaultCaret)logTextArea.getCaret();
     caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+//    addTempDefaultValues();
+  }
+
+  private void addTempDefaultValues() {
+    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV/INV.Birch");
+//    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV/INV.Altisource");
+//    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV/INV.Healthport");
+//    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV/INV.Lancope");
+//    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV");
+    reportOutputField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData");
+    System.setProperty(DROPBOX_HOME, invoiceHomeField.getText());
+    toggleGenerateReportButton();
   }
 
   private void initializeLogHandler() {
@@ -216,10 +229,10 @@ public class ReportUI extends JFrame {
       JFileChooser outputFileChooser = new JFileChooser();
       outputFileChooser.setDialogTitle("Select Invoice Home Folder Location");
       outputFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-      outputFileChooser.setFileFilter(new FileNameExtensionFilter("Compressed Log File", "gzip"));
+      outputFileChooser.setFileFilter(new FileNameExtensionFilter("Log File", "log"));
       if (outputFileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
         location = outputFileChooser.getSelectedFile().getAbsolutePath();
-        if(!location.endsWith(".gzip")) location = location + ".gzip";
+        if(!location.endsWith(".log")) location = location + ".log";
 
         JOptionPane.showMessageDialog(this, "Log Saved.");
       } else {
@@ -291,13 +304,14 @@ public class ReportUI extends JFrame {
         reportProgressBar.setValue(0);
         reportProgressBar.setMaximum(monthList.getSelectedIndices().length * 2);
         log("I'm working for you to generate the report you requested");
+
         for(int index : monthList.getSelectedIndices()) {
           try {
             reportProgressBar.setStringPainted(true);
             reportProgressBar.setString("Workign for you...");
             MONTH month = MONTH.valueOf(listModel.getElementAt(index).toString());
             int year = Integer.parseInt(yearComboBox.getSelectedItem().toString());
-            Map<String, ClientAccount> clientAccounts = invoiceReader.buildSalesReport(year,month);
+            Map<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
             publish(++counter);
             reportProgressBar.setString("Writing report...");
             ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts);
@@ -310,9 +324,10 @@ public class ReportUI extends JFrame {
           } catch (Exception ex) {
             ex.printStackTrace();
             log("Something went wrong :  " + ex.getMessage());
+            anyError = true;
           }
         }
-        reportProgressBar.setString("Woohoo!!! you can save additional copy");
+
         completed = true;
         return true;
       }
@@ -325,7 +340,13 @@ public class ReportUI extends JFrame {
         reportProgressBar.setValue(monthList.getSelectedIndices().length * 2);
         toggleButtonEnablement();
         toggleSaveReportAsButton();
-        JOptionPane.showMessageDialog(reportProgressBar.getRootPane(), "Woohoo!!! I think i generated the report you asked.\nLet me know what you think.");
+
+        String progressMessage = anyError ? "Completed with few errors" : "Woohoo!!! you can save additional copy";
+        String additional = anyError ? " with few errors" : "";
+        reportProgressBar.setString(progressMessage);
+        JOptionPane.showMessageDialog(reportProgressBar.getRootPane(),
+                        "Woohoo!!! I think i generated the report you asked" + additional
+                                        + ".\nLet me know what you think.");
       }
     };
     worker.execute();

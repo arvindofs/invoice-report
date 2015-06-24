@@ -2,7 +2,6 @@ package com.objectfrontier.invoice.excel.reports.sales;
 
 import com.objectfrontier.invoice.excel.exception.ReportException;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil.MONTH;
-import com.objectfrontier.invoice.excel.system.Progress;
 import com.objectfrontier.invoice.excel.system.Utils;
 import com.objectfrontier.model.ClientAccount;
 import com.objectfrontier.model.Employee;
@@ -16,6 +15,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 /**
@@ -38,16 +38,16 @@ public class ExcelSalesReportWriter {
   private Project currentProject;
   private Employee currentEmployee;
 
-  private Progress progress = Progress.instance();
-
   private String[] columns = new String[] { "Sl No", "First Name", "Last Name", "Role", "Work Location", "Client Name",
-                  "Project Code", "Invoice Rate /location/month", "Business Days Worked", "Invoiced Amount",
+                  "Project Code", "Invoice Rate /location /month", "Business Days Worked", "Invoiced Amount",
                   "Shadow Resource", "Business Start Date of Month", "Business End Date of Month" };
 
   private Utils utils;
 
   public ExcelSalesReportWriter(Map<String, ClientAccount> clientAccounts) {
     utils = Utils.getInstance();
+
+    log.removeHandler(utils.getHandler());
     log.addHandler(utils.getHandler());
     this.clientAccounts = clientAccounts;
   }
@@ -172,8 +172,6 @@ public class ExcelSalesReportWriter {
                       String.format("NETWORKDAYS(%s,%s)-%2f", startDateCell.getReference(), endDateCell.getReference(),
                                       currentEmployee.billing.ptoDays));
     }
-
-    progress.activityDone();
     log(String.format("Finished writing deatils for employee: %s %s", currentEmployee.firstName, currentEmployee.lastName));
   }
 

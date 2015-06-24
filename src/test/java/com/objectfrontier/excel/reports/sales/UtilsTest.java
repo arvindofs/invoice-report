@@ -1,9 +1,11 @@
 package com.objectfrontier.excel.reports.sales;
 
-import com.objectfrontier.invoice.excel.reports.sales.ExcelInvoiceReader;
+import com.objectfrontier.invoice.excel.ExcelInvoiceReader;
 import com.objectfrontier.invoice.excel.reports.sales.ExcelSalesReportWriter;
+import com.objectfrontier.invoice.excel.system.InvoiceUtil;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil.MONTH;
 import com.objectfrontier.invoice.excel.system.Utils;
+import com.objectfrontier.localcache.DataCache;
 import com.objectfrontier.model.ClientAccount;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -15,12 +17,15 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import static com.objectfrontier.invoice.excel.system.InvoiceUtil.DROPBOX_HOME;
 import static org.junit.Assert.*;
 
 /**
@@ -32,12 +37,22 @@ public class UtilsTest {
   File file;
   Utils utils;
   Handler handler;
+  StringBuilder logCollector;
   @Before
   public void setUp() throws Exception {
-
+    logCollector = new StringBuilder();
     handler = new Handler() {
       @Override public void publish(LogRecord record) {
+        StringBuilder buffer = new StringBuilder();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy hh:mm:ss.SSS");
+        String time = dateFormat.format(new Date(record.getMillis()));
+        buffer.append(time).append("\t");
+        buffer.append(record.getLevel().getName()).append("\t");
+        buffer.append("[").append(String.format("%s.%s", record.getLoggerName(), record.getSourceMethodName())).append(
+                        "]\t");
+        buffer.append(record.getMessage());
 
+        logCollector.append(buffer.toString()).append("\n");
       }
 
       @Override public void flush() {
@@ -49,9 +64,10 @@ public class UtilsTest {
       }
     };
 
-    file = new File("/Users/ahariharan/Documents/ofs/Sales-Report.xlsx");
+    file = new File("/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/All-Client-JUnit-Test-Sales-Report.xlsx");
     utils = Utils.getInstance();
     utils.setHandler(handler);
+    System.setProperty(DROPBOX_HOME, "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV");
     invoiceReader = new ExcelInvoiceReader();
 
   }
@@ -60,33 +76,49 @@ public class UtilsTest {
   public void tearDown() throws Exception {
   }
 
-  @Ignore
-  public void getFileLists() throws Exception {
-    List<File> fileList = utils.getInvoiceFiles();
-    assertEquals(3, fileList.size());
-    for(File file : fileList) {
-      log.info(file.getCanonicalPath());
-    }
+  @Test
+  public void testbuildAltisourceSalesReport() throws Exception {
+    String path = "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/INV.Altisource";
+    System.setProperty(DROPBOX_HOME, path);
+    file = new File("/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/Altisource-SalesReport.xlsx");
+    buildSalesReport();
+    saveLog("altisource");
   }
 
-  @Ignore
-  public void testFileNameMatcher() throws Exception {
-    boolean isMatching = utils.isInvoiceFileName("Lancope-Monthly-Invoice-Detail-2015.xlsx");
-    assertTrue(isMatching);
+  @Test
+  public void testHealthportSalesReport() throws Exception {
+    String path = "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/INV.Healthport";
+    System.setProperty(DROPBOX_HOME, path);
+    file = new File("/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/Healthport-SalesReport.xlsx");
+    buildSalesReport();
+    saveLog("healthport");
+  }
 
-    isMatching = utils.isInvoiceFileName("Birch-Consolidated SOW-Monthly-Invoice-Detail-2015.xlsx");
-    assertTrue(isMatching);
+  @Test
+  public void testLancopeSalesReport() throws Exception {
+    String path = "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/INV.Lancope";
+    System.setProperty(DROPBOX_HOME, path);
+    file = new File("/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/Lancope-SalesReport.xlsx");
+    buildSalesReport();
+    saveLog("lancope");
+  }
 
-    isMatching = utils.isInvoiceFileName("Birch-DotNet SOW-Monthly-Invoice-Detail-2015.xlsx");
-    assertTrue(isMatching);
-
-    isMatching = utils.isInvoiceFileName("Ezhumalai-Template.xlsx");
-    assertFalse(isMatching);
+  private void saveLog(String name) throws Exception {
+    String fileName = "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/" + name + ".log";
+    FileOutputStream fos = new FileOutputStream(new File(fileName));
+    fos.write(logCollector.toString().getBytes());
+    fos.flush();
+    fos.close();
 
   }
 
   @Test
-  public void testbuildSalesReport() throws Exception {
+  public void testSalesReport() throws Exception {
+    buildSalesReport();
+    saveLog("All-Accounts-JUnit-Test");
+  }
+
+  public void buildSalesReport() throws Exception {
     generateReport(MONTH.Jan, 2015);
     generateReport(MONTH.Feb, 2015);
     generateReport(MONTH.Mar, 2015);
@@ -96,13 +128,35 @@ public class UtilsTest {
   }
 
   private void generateReport(MONTH month, int year) throws Exception {
-    Map<String, ClientAccount> clientAccounts = invoiceReader.buildSalesReport(year,month);
+    Map<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
     ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts);
     XSSFWorkbook workbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
     FileOutputStream fos = new FileOutputStream(file);
-    workbook.write(fos);;
+    workbook.write(fos);
     fos.flush();
     fos.close();
+
+  }
+
+  @Test
+  public void testReadClientInvoices() throws Exception {
+//    String path = "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/INV.Birch";
+    String path = "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/INV.Altisource";
+//    String path = "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/INV.Healthport";
+//    String path = "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV/INV.Lancope";
+//    String path = "/Users/ahariharan/Documents/ofs/SalesReport-TestData/INV";
+    System.setProperty(DROPBOX_HOME, path);
+
+    Map<String, ClientAccount> clientAccountDetails = readInvoiceFile(MONTH.Jan, 2015);
+    System.out.println(clientAccountDetails);
+    //    readInvoiceFile(MONTH.Feb, 2015);
+//    readInvoiceFile(MONTH.Mar, 2015);
+//    readInvoiceFile(MONTH.Apr, 2015);
+//    readInvoiceFile(MONTH.Jun, 2015);
+  }
+
+  private Map<String, ClientAccount> readInvoiceFile(MONTH month, int year) throws Exception {
+    return invoiceReader.parseAllClientInvoice(year, month);
   }
 
   private XSSFWorkbook loadWorkbook() {
@@ -111,10 +165,6 @@ public class UtilsTest {
     } catch (Exception ex) {
       return null;
     }
-  }
-
-  private void saveWorkbook(XSSFWorkbook workbook) throws Exception {
-
   }
 
   @Test
