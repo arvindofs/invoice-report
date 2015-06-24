@@ -13,7 +13,6 @@ import java.util.WeakHashMap;
  */
 public class DataCache {
 
-
   public Map<String, ClientAccount> clientAccountCache = Collections.synchronizedMap(new WeakHashMap<String, ClientAccount>());
   public Map<String, Project> projectCache = Collections.synchronizedMap(new WeakHashMap<String, Project>());
 

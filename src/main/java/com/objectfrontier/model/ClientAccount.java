@@ -19,8 +19,8 @@ public class ClientAccount {
     this.name = name;
   }
 
-  public float getTotalInvoiceAmount() throws Exception {
-    throw new Exception("Method not implemented");
+  public float getTotalInvoiceAmount() {
+    throw new RuntimeException("Method not implemented");
   }
 
   @Override

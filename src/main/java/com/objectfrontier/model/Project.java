@@ -24,8 +24,8 @@ public class Project {
     this.code = code;
   }
 
-  public float getTotalInvoiceAmount() throws Exception{
-    throw new Exception("Method not implemented");
+  public float getTotalInvoiceAmount() {
+    throw new RuntimeException("Method not implemented");
   }
 
   @Override public boolean equals(Object o) {
