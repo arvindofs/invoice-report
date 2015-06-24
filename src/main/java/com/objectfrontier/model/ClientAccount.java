@@ -12,6 +12,8 @@ public class ClientAccount {
   public String name;
   public String code;
   public List<Project> projects = new ArrayList();
+  public Employee clientOwner;
+  public Employee accountOwner;
 
   public ClientAccount(String name) {
     this.name = name;
@@ -30,14 +32,16 @@ public class ClientAccount {
 
     ClientAccount that = (ClientAccount) o;
 
-    if (code != null ? !code.equals(that.code) : that.code != null)
-      return false;
     if (name != null ? !name.equals(that.name) : that.name != null)
+      return false;
+    if (code != null ? !code.equals(that.code) : that.code != null)
       return false;
     if (projects != null ? !projects.equals(that.projects) : that.projects != null)
       return false;
+    if (clientOwner != null ? !clientOwner.equals(that.clientOwner) : that.clientOwner != null)
+      return false;
+    return !(accountOwner != null ? !accountOwner.equals(that.accountOwner) : that.accountOwner != null);
 
-    return true;
   }
 
   @Override
@@ -45,6 +49,8 @@ public class ClientAccount {
     int result = name != null ? name.hashCode() : 0;
     result = 31 * result + (code != null ? code.hashCode() : 0);
     result = 31 * result + (projects != null ? projects.hashCode() : 0);
+    result = 31 * result + (clientOwner != null ? clientOwner.hashCode() : 0);
+    result = 31 * result + (accountOwner != null ? accountOwner.hashCode() : 0);
     return result;
   }
 

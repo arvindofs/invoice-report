@@ -18,8 +18,6 @@ public final class Utils {
 
   static final String INVOICE_FILE_NAME_SUFFIX = "Invoice-Detail-";//2015.xlsx";
 
-  private final Progress progress = Progress.instance();
-
   private Handler handler;
 
   public static String getHome() throws ReportException{
