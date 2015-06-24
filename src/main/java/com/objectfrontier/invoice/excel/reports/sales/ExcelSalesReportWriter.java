@@ -13,9 +13,7 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 /**
@@ -63,7 +61,7 @@ public class ExcelSalesReportWriter {
     this.workbook = (existingWorkbook == null) ? new XSSFWorkbook() : existingWorkbook;
     sheet = this.workbook.getSheet(getReportingMonthSheetName());
     if (sheet != null) {
-      this.workbook.removeSheetAt(existingWorkbook.getSheetIndex(sheet));
+      this.workbook.removeSheetAt(workbook.getSheetIndex(sheet));
     }
     sheet = this.workbook.createSheet(getReportingMonthSheetName());
     writeHeader();
@@ -109,9 +107,8 @@ public class ExcelSalesReportWriter {
       log(String.format("Initialization failed, skipping report generation for %4d,%s", year, month.toString()));
       return workbook;
     }
-    Iterator<String> iterator = clientAccounts.keySet().iterator();
-    while(iterator.hasNext()) {
-      currentClientAccount = clientAccounts.get(iterator.next());
+    for (String s : clientAccounts.keySet()) {
+      currentClientAccount = clientAccounts.get(s);
       writeClientSales();
     }
 
@@ -141,9 +138,9 @@ public class ExcelSalesReportWriter {
   private void writeDetails() {
     log(String.format("Started writing details for employee: %s %s", currentEmployee.firstName, currentEmployee.lastName));
     XSSFRow row = sheet.createRow(thisRow());
-    XSSFCell startDateCell = null;
-    XSSFCell endDateCell = null;
-    XSSFCell billableDaysCell = null;
+    XSSFCell startDateCell;
+    XSSFCell endDateCell;
+    XSSFCell billableDaysCell;
     createCell(row).setCellValue(currentRowNum-1);
     createCell(row).setCellValue(currentEmployee.firstName);
     createCell(row).setCellValue(currentEmployee.lastName);
@@ -154,7 +151,7 @@ public class ExcelSalesReportWriter {
     createCell(row).setCellValue(currentEmployee.billing.rate);
 
     billableDaysCell = createCell(row);
-    billableDaysCell.setCellValue(currentEmployee.billing.billableDays);;
+    billableDaysCell.setCellValue(currentEmployee.billing.billableDays);
 
     createCell(row).setCellValue(currentEmployee.billing.billed);
     createCell(row).setCellValue(currentEmployee.shadow ? "Yes" : "No");
