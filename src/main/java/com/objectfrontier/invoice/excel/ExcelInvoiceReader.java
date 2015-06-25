@@ -266,7 +266,7 @@ public class ExcelInvoiceReader {
 
       if (isThisRowContainingEmployeeForProject()) {
         Employee employee = getEmployee();
-        if (employee != null) {
+        if (employee != null && !currentProject.employees.contains(employee)) {
           currentProject.employees.add(employee);
           log(String.format("I found employee %s, %s, working for SOW/Project Code %s", employee.firstName,
                           employee.lastName,
@@ -297,7 +297,7 @@ public class ExcelInvoiceReader {
         employee.shadow = true;
         String code = getString(getCurrentRow(), SHADOW_RESOURCE_SOW_CODE_COL_INDEX);
         Project project = cache.getProject(code);
-        if (project != null) {
+        if (project != null  && !project.employees.contains(employee)) {
           log("Adding shadow resource to project employee list");
           project.employees.add(employee);
           task.add();

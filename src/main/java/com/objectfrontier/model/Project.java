@@ -25,7 +25,11 @@ public class Project {
   }
 
   public float getTotalInvoiceAmount() {
-    throw new RuntimeException("Method not implemented");
+    float totalInvoiceAmount = 0;
+    for (Employee employee : employees) {
+      totalInvoiceAmount += employee.billing.billed;
+    }
+    return totalInvoiceAmount;
   }
 
   @Override public boolean equals(Object o) {

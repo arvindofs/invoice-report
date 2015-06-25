@@ -23,9 +23,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.zip.ZipEntry;
@@ -108,13 +110,9 @@ public class ReportUI extends JFrame {
         log(buffer.toString());
       }
 
-      @Override public void flush() {
+      @Override public void flush() {}
 
-      }
-
-      @Override public void close() throws SecurityException {
-
-      }
+      @Override public void close() throws SecurityException {}
     };
 
     utils.setHandler(handler);
@@ -151,7 +149,11 @@ public class ReportUI extends JFrame {
 
     generateReportButton.addActionListener(new ActionListener() {
       @Override public void actionPerformed(ActionEvent e) {
-        onGenerateReport();
+        try {
+          onGenerateReport();
+        } catch (Exception ex) {
+          log(ex);
+        }
       }
     });
     quitButton.addActionListener(new ActionListener() {
@@ -285,12 +287,9 @@ public class ReportUI extends JFrame {
     saveReportAsButton.setEnabled(reportWorkbook != null && generateReportButton.isEnabled());
   }
 
-  private void onGenerateReport() {
-
+  private void onGenerateReport() throws Exception{
     completed = false;
     final ListModel listModel = monthList.getModel();
-
-
     toggleButtonEnablement();
     SwingWorker<Boolean, Integer> worker = new SwingWorker<Boolean, Integer>() {
 
@@ -323,7 +322,9 @@ public class ReportUI extends JFrame {
         invoiceReader = new ExcelInvoiceReader(task);
         clearLogButton.setEnabled(false);
         saveLogButton.setEnabled(false);
+        logTextArea.setText("");
         long totalDuration = System.currentTimeMillis();
+        List<Long> reportConstructionDurations = new ArrayList();
         for(int index : monthList.getSelectedIndices()) {
           long duration = System.currentTimeMillis();
           try {
@@ -332,39 +333,35 @@ public class ReportUI extends JFrame {
             currentTaskProgress.setString(String.format("Parsing invoices for %s %d...", month.toString(), year));
             Map<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
             ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts, task);
-            log(String.format(" read write stats %d / %d ", currentTaskProgress.getValue(),
-                            currentTaskProgress.getMaximum()));
             publish(++counter);
             currentTaskProgress.setString(String.format("Writing report for %s %d...", month.toString(), year));
             reportWorkbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
-            log(String.format(" read write stats %d / %d ", currentTaskProgress.getValue(),
-                            currentTaskProgress.getMaximum()));
             if (reportWorkbook != null) {
               if (reportOutputField.getText().length() > 0) {saveReport(getOutputFile());}
               toggleSaveReportAsButton();
             }
             publish(++counter);
           } catch (Exception ex) {
-            ex.printStackTrace();
+            log(ex);
             log("Something went wrong :  " + ex.getMessage());
             anyError = true;
           } finally {
             task.restart();
             duration = System.currentTimeMillis() - duration;
-            float seconds = duration/1000 % 60;
-            float min = duration/60000;
-
-            overallReportProgressBar.setString(String.format("Agv Time / month report: %2f min, %2.2f sec ", min, seconds));
+            reportConstructionDurations.add(duration);
+            duration = getAverage(reportConstructionDurations);
+            float seconds = TimeUnit.MILLISECONDS.toSeconds(duration) % 60;
+            float min = TimeUnit.MILLISECONDS.toMinutes(duration);
+            overallReportProgressBar.setString(String.format("Agv Time taken / monthly report: %2.0f min, %2.2f sec ", min, seconds));
           }
-
         }
         currentTaskProgress.setString("Completed!!!");
         clearLogButton.setEnabled(true);
         saveLogButton.setEnabled(true);
         completed = true;
         totalDuration = System.currentTimeMillis() - totalDuration;
-        float seconds = totalDuration/1000 % 60;
-        float min = totalDuration/60000;
+        float seconds = TimeUnit.MILLISECONDS.toSeconds(totalDuration) % 60;
+        float min = TimeUnit.MILLISECONDS.toMinutes(totalDuration);
         String totalTimeTaken = String.format("Completed in  %2.0f min, %2.2f sec ", min, seconds);
         log(totalTimeTaken);
         overallReportProgressBar.setString(totalTimeTaken);
@@ -380,15 +377,23 @@ public class ReportUI extends JFrame {
         toggleButtonEnablement();
         toggleSaveReportAsButton();
 
-        String progressMessage = anyError ? "Completed with few errors" : "Woohoo!!! you can save additional copy";
+        String progressMessage = anyError ? "Completed with few errors" : "Hurry!!! Report generated successfully";
         String additional = anyError ? " with few errors" : "";
 //        overallReportProgressBar.setString(progressMessage);
         JOptionPane.showMessageDialog(overallReportProgressBar.getRootPane(),
-                        "Woohoo!!! I think i generated the report you asked" + additional
+                        progressMessage + additional
                                         + ".\nLet me know what you think.");
       }
     };
     worker.execute();
+  }
+
+  private long getAverage(List<Long> values) {
+    long total = 0;
+    for(long value : values) {
+      total += value;
+    }
+    return (total/values.size());
   }
 
   private void saveIndividualReport(File file) {

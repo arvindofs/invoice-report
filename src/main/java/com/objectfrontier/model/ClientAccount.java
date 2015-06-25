@@ -20,7 +20,11 @@ public class ClientAccount {
   }
 
   public float getTotalInvoiceAmount() {
-    throw new RuntimeException("Method not implemented");
+    float totalInvoiceAmount = 0;
+    for(Project project : projects) {
+      totalInvoiceAmount += project.getTotalInvoiceAmount();
+    }
+    return totalInvoiceAmount;
   }
 
   @Override

@@ -27,6 +27,7 @@ public class ExcelSalesReportWriter {
   private Map<String, ClientAccount> clientAccounts;
   private XSSFWorkbook workbook;
   private XSSFSheet sheet;
+  private XSSFSheet summarySheet;
 
   private int reportingYear;
   private MONTH reportingMonth;
@@ -61,13 +62,23 @@ public class ExcelSalesReportWriter {
       throw new ReportException("No data available to generate report");
 
     this.workbook = (existingWorkbook == null) ? new XSSFWorkbook() : existingWorkbook;
-    sheet = this.workbook.getSheet(getReportingMonthSheetName());
+    sheet = createSheet(getReportingMonthSheetName());
+    summarySheet = createSheet(getReportingMonthSheetName() + " - Invoice Summary");
+    writeHeader();
+    log("Initializing workbook completed before writing report");
+
+  }
+
+  private XSSFSheet createSheet(String sheetName) {
+    XSSFSheet sheet = null;
+
+    sheet = this.workbook.getSheet(sheetName);
     if (sheet != null) {
       this.workbook.removeSheetAt(workbook.getSheetIndex(sheet));
     }
-    sheet = this.workbook.createSheet(getReportingMonthSheetName());
-    writeHeader();
-    log("Initializing workbook completed before writing report");
+    sheet = this.workbook.createSheet(sheetName);
+
+    return sheet;
   }
 
   private void writeHeader() {
@@ -109,6 +120,12 @@ public class ExcelSalesReportWriter {
       log(String.format("Initialization failed, skipping report generation for %4d,%s", year, month.toString()));
       return workbook;
     }
+
+    XSSFRow summaryRow = summarySheet.createRow(summarySheet.getLastRowNum() + 1);
+    summaryRow.createCell(0).setCellValue("Client Name");
+    summaryRow.createCell(1).setCellValue("Project/SOW Name & Code");
+    summaryRow.createCell(2).setCellValue("Total Invoice Amount");
+
     for (String s : clientAccounts.keySet()) {
       currentClientAccount = clientAccounts.get(s);
       writeClientSales();
@@ -116,18 +133,33 @@ public class ExcelSalesReportWriter {
 
     for (int x = 0; x < columns.length; x++) {
       sheet.autoSizeColumn(x);
+      if (x < 3) summarySheet.autoSizeColumn(x);
     }
+
+
     return this.workbook;
   }
 
   private void writeClientSales() throws ReportException {
-    if (currentClientAccount == null) throw new ReportException("Missing client account data");
+    if (currentClientAccount == null)
+      throw new ReportException("Missing client account data");
     log(String.format("Started writing report for client %s", currentClientAccount.name));
-    for(Project project : currentClientAccount.projects) {
+
+    XSSFRow summaryRow = summarySheet.createRow(summarySheet.getLastRowNum() + 1);
+    summaryRow.createCell(0).setCellValue(currentClientAccount.name);
+
+    for (Project project : currentClientAccount.projects) {
       this.currentProject = project;
       log(String.format("Processing report for project %s[%s]", currentProject.name, currentProject.code));
       writeProjectSales();
+      summaryRow.createCell(1).setCellValue(String.format("%s [%s]", currentProject.name, currentProject.code));
+      summaryRow.createCell(2).setCellValue(currentProject.getTotalInvoiceAmount());
     }
+    log("Finish writing account invoice summary");
+    summaryRow = summarySheet.createRow(summarySheet.getLastRowNum() + 1);
+    summaryRow.createCell(1).setCellValue("Total Client Invoice Amount");
+    summaryRow.createCell(2).setCellValue(currentClientAccount.getTotalInvoiceAmount());
+    summarySheet.createRow(summarySheet.getLastRowNum() + 1);
   }
 
   private void writeProjectSales() {
