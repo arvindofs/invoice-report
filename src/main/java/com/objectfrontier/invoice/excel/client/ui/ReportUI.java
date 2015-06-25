@@ -332,6 +332,8 @@ public class ReportUI extends JFrame {
             int year = Integer.parseInt(yearComboBox.getSelectedItem().toString());
             currentTaskProgress.setString(String.format("Parsing invoices for %s %d...", month.toString(), year));
             Map<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
+            log("Data read for month " + month.toString() + " is ");
+            log(clientAccounts);
             ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts, task);
             publish(++counter);
             currentTaskProgress.setString(String.format("Writing report for %s %d...", month.toString(), year));
@@ -367,7 +369,7 @@ public class ReportUI extends JFrame {
         overallReportProgressBar.setString(totalTimeTaken);
         return true;
       }
-      
+
       private long getAverage(List<Long> values) {
         long total = 0;
         for(long value : values) {
@@ -458,6 +460,7 @@ public class ReportUI extends JFrame {
     homeChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
     if (homeChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
       invoiceHomeField.setText(homeChooser.getSelectedFile().getAbsolutePath());
+      reportOutputField.setText(homeChooser.getSelectedFile().getAbsolutePath());
       System.setProperty(DROPBOX_HOME, invoiceHomeField.getText());
     }
     toggleGenerateReportButton();

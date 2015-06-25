@@ -124,7 +124,8 @@ public class ExcelSalesReportWriter {
     XSSFRow summaryRow = summarySheet.createRow(summarySheet.getLastRowNum() + 1);
     summaryRow.createCell(0).setCellValue("Client Name");
     summaryRow.createCell(1).setCellValue("Project/SOW Name & Code");
-    summaryRow.createCell(2).setCellValue("Total Invoice Amount");
+    summaryRow.createCell(2).setCellValue("Total Invoice Amount/Project");
+    summaryRow.createCell(3).setCellValue("Total Invoice Amount/Client");
 
     for (String s : clientAccounts.keySet()) {
       currentClientAccount = clientAccounts.get(s);
@@ -133,7 +134,7 @@ public class ExcelSalesReportWriter {
 
     for (int x = 0; x < columns.length; x++) {
       sheet.autoSizeColumn(x);
-      if (x < 3) summarySheet.autoSizeColumn(x);
+      if (x < 4) summarySheet.autoSizeColumn(x);
     }
 
 
@@ -144,22 +145,24 @@ public class ExcelSalesReportWriter {
     if (currentClientAccount == null)
       throw new ReportException("Missing client account data");
     log(String.format("Started writing report for client %s", currentClientAccount.name));
-
+    log(currentClientAccount);
     XSSFRow summaryRow = summarySheet.createRow(summarySheet.getLastRowNum() + 1);
     summaryRow.createCell(0).setCellValue(currentClientAccount.name);
 
     for (Project project : currentClientAccount.projects) {
       this.currentProject = project;
-      log(String.format("Processing report for project %s[%s]", currentProject.name, currentProject.code));
+      log(String.format("Processing report for project %s[%s]", project.name, project.code));
       writeProjectSales();
-      summaryRow.createCell(1).setCellValue(String.format("%s [%s]", currentProject.name, currentProject.code));
+      log("Adding project to summary tab");
+      log(String.format("Project: %s, Code: %s, %.2f", project.name, project.code, project.getTotalInvoiceAmount()));
+      summaryRow.createCell(1).setCellValue(String.format("%s [%s]", project.name, project.code));
       summaryRow.createCell(2).setCellValue(currentProject.getTotalInvoiceAmount());
+      summaryRow = summarySheet.createRow(summarySheet.getLastRowNum() + 1);
     }
-    log("Finish writing account invoice summary");
-    summaryRow = summarySheet.createRow(summarySheet.getLastRowNum() + 1);
-    summaryRow.createCell(1).setCellValue("Total Client Invoice Amount");
-    summaryRow.createCell(2).setCellValue(currentClientAccount.getTotalInvoiceAmount());
+    summaryRow.createCell(3).setCellValue(currentClientAccount.getTotalInvoiceAmount());
     summarySheet.createRow(summarySheet.getLastRowNum() + 1);
+    log(String.format("Client: %s, Code: %s, %.2f", currentClientAccount.name, currentClientAccount.code, currentClientAccount.getTotalInvoiceAmount()));
+    log(String.format("Finished writing report for client %s", currentClientAccount.name));
   }
 
   private void writeProjectSales() {

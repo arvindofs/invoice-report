@@ -235,10 +235,11 @@ public class ExcelInvoiceReader {
         if (columnHasMatchingString(SOW_ID_LABEL_COL_INDEX, SOW_ID_LABEL)) {
           skipRows(1);
           String code = getString(getCurrentRow(), SOW_CODE_COL_INDEX);
-          currentProject = cache.getProject(code);
+          String clientName = currentClientAccount.name;
+          currentProject = cache.getProject(clientName + "-" + code);
           rewind(1);
           if (currentProject == null) {
-            addProject(code);
+            addProject(clientName + "-" + code);
           }
 
           // This skips rows till we identify Role column, to begin reading employee details
@@ -296,7 +297,8 @@ public class ExcelInvoiceReader {
         }
         employee.shadow = true;
         String code = getString(getCurrentRow(), SHADOW_RESOURCE_SOW_CODE_COL_INDEX);
-        Project project = cache.getProject(code);
+        String clientName = currentClientAccount.name;
+        Project project = cache.getProject(clientName + "-" + code);
         if (project != null  && !project.employees.contains(employee)) {
           log("Adding shadow resource to project employee list");
           project.employees.add(employee);

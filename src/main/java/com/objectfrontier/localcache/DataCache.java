@@ -5,6 +5,7 @@ import com.objectfrontier.model.Employee;
 import com.objectfrontier.model.Project;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -13,8 +14,8 @@ import java.util.WeakHashMap;
  */
 public class DataCache {
 
-  public Map<String, ClientAccount> clientAccountCache = Collections.synchronizedMap(new WeakHashMap<String, ClientAccount>());
-  public Map<String, Project> projectCache = Collections.synchronizedMap(new WeakHashMap<String, Project>());
+  public Map<String, ClientAccount> clientAccountCache = Collections.synchronizedMap(new HashMap<String, ClientAccount>());
+  public Map<String, Project> projectCache = Collections.synchronizedMap(new HashMap<String, Project>());
 
   public ClientAccount getClient(String name) {
     return clientAccountCache.get(name);
