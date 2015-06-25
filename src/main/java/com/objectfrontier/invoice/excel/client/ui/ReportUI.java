@@ -367,6 +367,14 @@ public class ReportUI extends JFrame {
         overallReportProgressBar.setString(totalTimeTaken);
         return true;
       }
+      
+      private long getAverage(List<Long> values) {
+        long total = 0;
+        for(long value : values) {
+          total += value;
+        }
+        return (total/values.size());
+      }
 
       @Override protected void process(List<Integer> chunks) {
         overallReportProgressBar.setValue(chunks.get(0));
@@ -388,7 +396,7 @@ public class ReportUI extends JFrame {
     worker.execute();
   }
 
-  private long getAverage(List<Long> values) {
+  private long getAverage1(List<Long> values) {
     long total = 0;
     for(long value : values) {
       total += value;
