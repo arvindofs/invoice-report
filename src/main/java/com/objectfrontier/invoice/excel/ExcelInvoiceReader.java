@@ -17,7 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.SortedMap;
 import java.util.logging.Logger;
 
 import static com.objectfrontier.invoice.excel.system.InvoiceUtil.*;
@@ -56,7 +56,7 @@ public class ExcelInvoiceReader {
     log.addHandler(utils.getHandler());
   }
 
-  public Map<String, ClientAccount> parseAllClientInvoice(int year, InvoiceUtil.MONTH month) throws ReportException{
+  public SortedMap<String, ClientAccount> parseAllClientInvoice(int year, InvoiceUtil.MONTH month) throws ReportException{
     if (year < 2015) throw new ReportException("Year to build sales report must be 2015 and above");
     this.reportingYear = year;
     this.reportingMonth = month;
@@ -138,10 +138,11 @@ public class ExcelInvoiceReader {
     currentClientAccount.code = getString(getNextRow(), CLIENT_CODE_COL_INDEX);
   }
 
-  private void addProject(String code){
+  private void addProject(String code, String uniqueCacheCode){
     log("Adding project to cache");
-    currentProject = cache.addProject(code);
-    currentProject.id = getString(getCurrentRow(), SOW_ID_COL_INDEX);
+    currentProject = cache.addProject(uniqueCacheCode);
+    currentProject.code = code;
+    currentProject.id = getRawCellValue(getCurrentRow(), SOW_ID_COL_INDEX);
     currentProject.startDate = getDate(getCurrentRow(), SOW_START_DATE_COL_INDEX);
     currentProject.name = getString(getNextRow(), SOW_NAME_COL_INDEX);
     currentProject.endDate = getDate(getCurrentRow(), SOW_END_DATE_COL_INDEX);
@@ -235,11 +236,12 @@ public class ExcelInvoiceReader {
         if (columnHasMatchingString(SOW_ID_LABEL_COL_INDEX, SOW_ID_LABEL)) {
           skipRows(1);
           String code = getString(getCurrentRow(), SOW_CODE_COL_INDEX);
+          log(String.format("Reading SOW Code from Row=%d Col=%d value=%s", currentRow, SOW_CODE_COL_INDEX, code));
           String clientName = currentClientAccount.name;
           currentProject = cache.getProject(clientName + "-" + code);
           rewind(1);
           if (currentProject == null) {
-            addProject(clientName + "-" + code);
+            addProject(code, clientName + "-" + code);
           }
 
           // This skips rows till we identify Role column, to begin reading employee details
@@ -398,6 +400,13 @@ public class ExcelInvoiceReader {
 
   private int getLastRowIndex() {
     return reportingMonthSheet.getLastRowNum();
+  }
+
+  private String getRawCellValue(XSSFRow row, int colIndex) {
+    XSSFCell cell = row.getCell(colIndex);
+    if (cell == null) return "";
+
+    return cell.getRawValue() == null ? "" : cell.getRawValue();
   }
 
   private String getString(XSSFRow row, int colIndex) {

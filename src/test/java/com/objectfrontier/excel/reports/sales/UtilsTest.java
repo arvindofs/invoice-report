@@ -2,17 +2,14 @@ package com.objectfrontier.excel.reports.sales;
 
 import com.objectfrontier.invoice.excel.ExcelInvoiceReader;
 import com.objectfrontier.invoice.excel.reports.sales.ExcelSalesReportWriter;
-import com.objectfrontier.invoice.excel.system.InvoiceUtil;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil.MONTH;
 import com.objectfrontier.invoice.excel.system.Utils;
 import com.objectfrontier.job.Task;
-import com.objectfrontier.localcache.DataCache;
 import com.objectfrontier.model.ClientAccount;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -20,14 +17,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import static com.objectfrontier.invoice.excel.system.InvoiceUtil.DROPBOX_HOME;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Created by ahariharan on 6/18/15.
@@ -144,7 +142,7 @@ public class UtilsTest {
   }
 
   private void generateReport(MONTH month, int year) throws Exception {
-    Map<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
+    SortedMap<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
     ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts, task);
     XSSFWorkbook workbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
     FileOutputStream fos = new FileOutputStream(file);

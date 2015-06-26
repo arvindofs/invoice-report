@@ -1,24 +1,23 @@
 package com.objectfrontier.localcache;
 
 import com.objectfrontier.model.ClientAccount;
-import com.objectfrontier.model.Employee;
 import com.objectfrontier.model.Project;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Created by ahariharan on 6/18/15.
  */
 public class DataCache {
 
-  public Map<String, ClientAccount> clientAccountCache = Collections.synchronizedMap(new HashMap<String, ClientAccount>());
-  public Map<String, Project> projectCache = Collections.synchronizedMap(new HashMap<String, Project>());
+  public SortedMap<String, ClientAccount> clientAccountCache = Collections.synchronizedSortedMap(
+                  new TreeMap<String, ClientAccount>());
+  public SortedMap<String, Project> projectCache = Collections.synchronizedSortedMap(new TreeMap<String, Project>());
 
-  public ClientAccount getClient(String name) {
-    return clientAccountCache.get(name);
+  public ClientAccount getClient(String uniqueKey) {
+    return clientAccountCache.get(uniqueKey);
   }
 
   public ClientAccount addClient(String  name) {
@@ -27,13 +26,13 @@ public class DataCache {
     return clientAccount;
   }
 
-  public Project getProject(String name) {
-    return projectCache.get(name);
+  public Project getProject(String uniqueKey) {
+    return projectCache.get(uniqueKey);
   }
 
-  public Project addProject(String code) {
-    Project project = new Project(code);
-    projectCache.put(code, project);
+  public Project addProject(String uniqueKey) {
+    Project project = new Project(uniqueKey);
+    projectCache.put(uniqueKey, project);
     return project;
   }
 }

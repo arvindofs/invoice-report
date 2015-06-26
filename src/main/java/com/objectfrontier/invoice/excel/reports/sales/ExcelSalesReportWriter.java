@@ -14,7 +14,7 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.util.Map;
+import java.util.SortedMap;
 import java.util.logging.Logger;
 
 /**
@@ -24,7 +24,7 @@ public class ExcelSalesReportWriter {
 
   private Logger log = Logger.getLogger(this.getClass().getSimpleName());
 
-  private Map<String, ClientAccount> clientAccounts;
+  private SortedMap<String, ClientAccount> clientAccounts;
   private XSSFWorkbook workbook;
   private XSSFSheet sheet;
   private XSSFSheet summarySheet;
@@ -45,16 +45,12 @@ public class ExcelSalesReportWriter {
   private Utils utils;
   private Task task;
 
-  public ExcelSalesReportWriter(Map<String, ClientAccount> clientAccounts, Task task) {
+  public ExcelSalesReportWriter(SortedMap<String, ClientAccount> clientAccounts, Task task) {
     utils = Utils.getInstance();
     log.removeHandler(utils.getHandler());
     log.addHandler(utils.getHandler());
     this.clientAccounts = clientAccounts;
     this.task = task;
-  }
-
-  private String getReportingMonthSheetName() {
-    return reportingMonth.toString() + reportingYear;
   }
 
   private void init(XSSFWorkbook existingWorkbook) throws ReportException {
@@ -67,6 +63,10 @@ public class ExcelSalesReportWriter {
     writeHeader();
     log("Initializing workbook completed before writing report");
 
+  }
+
+  private String getReportingMonthSheetName() {
+    return reportingMonth.toString() + reportingYear;
   }
 
   private XSSFSheet createSheet(String sheetName) {
@@ -123,7 +123,7 @@ public class ExcelSalesReportWriter {
 
     XSSFRow summaryRow = summarySheet.createRow(summarySheet.getLastRowNum() + 1);
     summaryRow.createCell(0).setCellValue("Client Name");
-    summaryRow.createCell(1).setCellValue("Project/SOW Name & Code");
+    summaryRow.createCell(1).setCellValue("Project/SOW Code");
     summaryRow.createCell(2).setCellValue("Total Invoice Amount/Project");
     summaryRow.createCell(3).setCellValue("Total Invoice Amount/Client");
 
@@ -155,7 +155,7 @@ public class ExcelSalesReportWriter {
       writeProjectSales();
       log("Adding project to summary tab");
       log(String.format("Project: %s, Code: %s, %.2f", project.name, project.code, project.getTotalInvoiceAmount()));
-      summaryRow.createCell(1).setCellValue(String.format("%s [%s]", project.name, project.code));
+      summaryRow.createCell(1).setCellValue(String.format("%s",  project.code));
       summaryRow.createCell(2).setCellValue(currentProject.getTotalInvoiceAmount());
       summaryRow = summarySheet.createRow(summarySheet.getLastRowNum() + 1);
     }
