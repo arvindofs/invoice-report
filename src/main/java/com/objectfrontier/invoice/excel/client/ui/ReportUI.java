@@ -66,6 +66,8 @@ public class ReportUI extends JFrame {
 
   private Utils utils;
 
+  private long timeTaken;
+
   public ReportUI() {
 
     utils = Utils.getInstance();
@@ -322,71 +324,54 @@ public class ReportUI extends JFrame {
         clearLogButton.setEnabled(false);
         saveLogButton.setEnabled(false);
         logTextArea.setText("");
-        long totalDuration = System.currentTimeMillis();
+
         List<Long> reportConstructionDurations = new ArrayList();
         int numOfMonthsToReport =  monthList.getSelectedIndices().length;
         overallReportProgressBar.setString("Estimating Duration...");
+        timeTaken = System.currentTimeMillis();
         for(int i = 0; i <numOfMonthsToReport; i++) {
           int index = monthList.getSelectedIndices()[i];
           long duration = System.currentTimeMillis();
-          try {
-            MONTH month = MONTH.valueOf(listModel.getElementAt(index).toString());
-            int year = Integer.parseInt(yearComboBox.getSelectedItem().toString());
-            currentTaskProgress.setString(String.format("Parsing invoices for %s %d...", month.toString(), year));
-            SortedMap<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
-            log("Data read for month " + month.toString() + " is ");
-            log(clientAccounts);
-            ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts, task);
-            publish(++counter);
-            currentTaskProgress.setString(String.format("Writing report for %s %d...", month.toString(), year));
-            reportWorkbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
-            if (reportWorkbook != null) {
-              if (reportOutputField.getText().length() > 0) {saveReport(getOutputFile());}
-              toggleSaveReportAsButton();
+          MONTH month = MONTH.valueOf(listModel.getElementAt(index).toString());
+          int year = Integer.parseInt(yearComboBox.getSelectedItem().toString());
+
+          currentTaskProgress.setString(String.format("Parsing invoices for %s %d...", month.toString(), year));
+          SortedMap<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
+
+          log("Data read for month " + month.toString() + " is ");
+          log(clientAccounts);
+          ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts, task);
+          publish(++counter);
+          currentTaskProgress.setString(String.format("Writing report for %s %d...", month.toString(), year));
+          reportWorkbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
+
+          if (reportWorkbook != null) {
+            if (reportOutputField.getText().length() > 0) {
+              saveReport(getOutputFile());
             }
-            publish(++counter);
-          } catch (Exception ex) {
-            log(ex);
-            log("Something went wrong :  " + ex.getMessage());
-            anyError = true;
-          } finally {
-            task.restart();
-            duration = System.currentTimeMillis() - duration;
-            reportConstructionDurations.add(duration);
-            duration = getAverage(reportConstructionDurations);
-            float seconds = TimeUnit.MILLISECONDS.toSeconds(duration) % 60;
-            float min = TimeUnit.MILLISECONDS.toMinutes(duration);
-            log(String.format("Agv Time taken / monthly report: %2.0f min, %2.2f sec ", min, seconds));
-            long pendingDuration = duration * (numOfMonthsToReport-i-1);
-            overallReportProgressBar.setString(String.format("Approximate time to complete  %2.0f min, %2.2f sec ",
-                            getMinutesComponent(pendingDuration), getSecondsComponent(pendingDuration)));
+            toggleSaveReportAsButton();
           }
+
+          publish(++counter);
+          task.restart();
+          duration = System.currentTimeMillis() - duration;
+          reportConstructionDurations.add(duration);
+          long pendingDuration = getAverage(reportConstructionDurations) * (numOfMonthsToReport - i -1);
+          setTimeToComplete(pendingDuration);
         }
+
         currentTaskProgress.setString("Completed!!!");
         clearLogButton.setEnabled(true);
         saveLogButton.setEnabled(true);
         completed = true;
-        totalDuration = System.currentTimeMillis() - totalDuration;
-        float seconds = TimeUnit.MILLISECONDS.toSeconds(totalDuration) % 60;
-        float min = TimeUnit.MILLISECONDS.toMinutes(totalDuration);
+        timeTaken = System.currentTimeMillis() - timeTaken;
 
-        String totalTimeTaken = String.format("Total time taken to complete %2.0f min, %2.2f sec ", min, seconds);
+        String totalTimeTaken = String
+                        .format("Total time taken to complete %2d min, %2.2f sec ", getMinutes(timeTaken),
+                                        getSeconds(timeTaken));
         log(totalTimeTaken);
         overallReportProgressBar.setString(totalTimeTaken);
         return true;
-      }
-
-      private float getMinutesComponent(long duration) {
-        return TimeUnit.MILLISECONDS.toMinutes(duration);
-      }
-
-      private float getSecondsComponent(long duration) {
-       return  TimeUnit.MILLISECONDS.toSeconds(duration) % 60;
-      }
-
-
-      private long getDurationNow(long pastTimeInMilliseconds) {
-        return System.currentTimeMillis() - pastTimeInMilliseconds;
       }
 
       private long getAverage(List<Long> values) {
@@ -417,16 +402,22 @@ public class ReportUI extends JFrame {
     worker.execute();
   }
 
-  private long getAverage1(List<Long> values) {
-    long total = 0;
-    for(long value : values) {
-      total += value;
-    }
-    return (total/values.size());
+  private float getSeconds(long duration) {
+    log("In getSeconds " + duration);
+    return TimeUnit.MILLISECONDS.toSeconds(duration) % 60;
   }
 
-  private void saveIndividualReport(File file) {
+  private int getMinutes(long duration) {
+    log("In getMinutes " + duration);
+    return (int)TimeUnit.MILLISECONDS.toMinutes(duration);
+  }
 
+  public void setTimeToComplete(long duration) {
+    float min = getMinutes(duration);
+    float seconds = getSeconds(duration);
+    overallReportProgressBar.setString(String.format("Approximate time to complete  %2.0f min, %2.2f sec ",
+                    min, seconds));
+    log(String.format("Agv Time taken / monthly report: %2.0f min, %2.2f sec ", min, seconds));
   }
 
   private void saveReport(File file) {
