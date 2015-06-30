@@ -3,6 +3,7 @@ package com.objectfrontier.invoice.excel;
 import com.objectfrontier.invoice.excel.exception.ReportException;
 import com.objectfrontier.invoice.excel.system.InvoiceUtil;
 import com.objectfrontier.invoice.excel.system.Utils;
+import com.objectfrontier.job.Task;
 import com.objectfrontier.localcache.DataCache;
 import com.objectfrontier.model.*;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -16,7 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.SortedMap;
 import java.util.logging.Logger;
 
 import static com.objectfrontier.invoice.excel.system.InvoiceUtil.*;
@@ -46,18 +47,20 @@ public class ExcelInvoiceReader {
 
   private Utils utils;
 
-  public ExcelInvoiceReader() {
+  private Task task;
+
+  public ExcelInvoiceReader(Task task) {
+    this.task = task;
     utils = Utils.getInstance();
     log.removeHandler(utils.getHandler());
     log.addHandler(utils.getHandler());
   }
 
-  public Map<String, ClientAccount> parseAllClientInvoice(int year, InvoiceUtil.MONTH month) throws ReportException{
+  public SortedMap<String, ClientAccount> parseAllClientInvoice(int year, InvoiceUtil.MONTH month) throws ReportException{
     if (year < 2015) throw new ReportException("Year to build sales report must be 2015 and above");
     this.reportingYear = year;
     this.reportingMonth = month;
     init();
-
     log("Collecting data for sales report");
     for(File file : invoiceFiles) {
       resetCurrent();
@@ -65,7 +68,6 @@ public class ExcelInvoiceReader {
         log("Something i did not expect, so could not process " + file.getAbsolutePath());
       }
     }
-
     return cache.clientAccountCache;
   }
 
@@ -136,10 +138,11 @@ public class ExcelInvoiceReader {
     currentClientAccount.code = getString(getNextRow(), CLIENT_CODE_COL_INDEX);
   }
 
-  private void addProject(String code){
+  private void addProject(String code, String uniqueCacheCode){
     log("Adding project to cache");
-    currentProject = cache.addProject(code);
-    currentProject.id = getString(getCurrentRow(), SOW_ID_COL_INDEX);
+    currentProject = cache.addProject(uniqueCacheCode);
+    currentProject.code = code;
+    currentProject.id = getRawCellValue(getCurrentRow(), SOW_ID_COL_INDEX);
     currentProject.startDate = getDate(getCurrentRow(), SOW_START_DATE_COL_INDEX);
     currentProject.name = getString(getNextRow(), SOW_NAME_COL_INDEX);
     currentProject.endDate = getDate(getCurrentRow(), SOW_END_DATE_COL_INDEX);
@@ -233,10 +236,12 @@ public class ExcelInvoiceReader {
         if (columnHasMatchingString(SOW_ID_LABEL_COL_INDEX, SOW_ID_LABEL)) {
           skipRows(1);
           String code = getString(getCurrentRow(), SOW_CODE_COL_INDEX);
-          currentProject = cache.getProject(code);
+          log(String.format("Reading SOW Code from Row=%d Col=%d value=%s", currentRow, SOW_CODE_COL_INDEX, code));
+          String clientName = currentClientAccount.name;
+          currentProject = cache.getProject(clientName + "-" + code);
           rewind(1);
           if (currentProject == null) {
-            addProject(code);
+            addProject(code, clientName + "-" + code);
           }
 
           // This skips rows till we identify Role column, to begin reading employee details
@@ -264,11 +269,12 @@ public class ExcelInvoiceReader {
 
       if (isThisRowContainingEmployeeForProject()) {
         Employee employee = getEmployee();
-        if (employee != null) {
+        if (employee != null && !currentProject.employees.contains(employee)) {
           currentProject.employees.add(employee);
           log(String.format("I found employee %s, %s, working for SOW/Project Code %s", employee.firstName,
                           employee.lastName,
                           currentProject.code));
+          task.add();
 
         } else {
           log("WARNING: Employee name was found in row " + (currentRow + 1) + " but few other details were missing so ignoring");
@@ -293,10 +299,12 @@ public class ExcelInvoiceReader {
         }
         employee.shadow = true;
         String code = getString(getCurrentRow(), SHADOW_RESOURCE_SOW_CODE_COL_INDEX);
-        Project project = cache.getProject(code);
-        if (project != null) {
+        String clientName = currentClientAccount.name;
+        Project project = cache.getProject(clientName + "-" + code);
+        if (project != null  && !project.employees.contains(employee)) {
           log("Adding shadow resource to project employee list");
           project.employees.add(employee);
+          task.add();
         } else {
           log("WARNING: No valid project assigned to shadow resource , hence not adding " + employee.firstName + " "
                           + employee.lastName);
@@ -392,6 +400,13 @@ public class ExcelInvoiceReader {
 
   private int getLastRowIndex() {
     return reportingMonthSheet.getLastRowNum();
+  }
+
+  private String getRawCellValue(XSSFRow row, int colIndex) {
+    XSSFCell cell = row.getCell(colIndex);
+    if (cell == null) return "";
+
+    return cell.getRawValue() == null ? "" : cell.getRawValue();
   }
 
   private String getString(XSSFRow row, int colIndex) {

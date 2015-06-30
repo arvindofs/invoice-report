@@ -3,6 +3,7 @@ package com.objectfrontier.invoice.excel.client.ui;
 import com.objectfrontier.invoice.excel.ExcelInvoiceReader;
 import com.objectfrontier.invoice.excel.reports.sales.ExcelSalesReportWriter;
 import com.objectfrontier.invoice.excel.system.Utils;
+import com.objectfrontier.job.Task;
 import com.objectfrontier.model.ClientAccount;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -22,11 +23,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.SortedMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static com.objectfrontier.invoice.excel.system.InvoiceUtil.DROPBOX_HOME;
 import static com.objectfrontier.invoice.excel.system.InvoiceUtil.MONTH;
@@ -42,17 +47,17 @@ public class ReportUI extends JFrame {
   private JButton generateReportButton;
   private JComboBox yearComboBox;
   private JList monthList;
-  private JProgressBar reportProgressBar;
+  private JProgressBar overallReportProgressBar;
   private JTextArea logTextArea;
   private JScrollPane logScrollPane;
   private JButton saveReportAsButton;
   private JButton clearLogButton;
   private JButton saveLogButton;
+  private JProgressBar currentTaskProgress;
 
   private int currentYear;
   private int currentMonth;
   private ExcelInvoiceReader invoiceReader;
-
 
   boolean completed = false;
   boolean anyError = false;
@@ -60,6 +65,8 @@ public class ReportUI extends JFrame {
   private XSSFWorkbook reportWorkbook;
 
   private Utils utils;
+
+  private long timeTaken;
 
   public ReportUI() {
 
@@ -79,19 +86,14 @@ public class ReportUI extends JFrame {
     addListeners();
     DefaultCaret caret = (DefaultCaret)logTextArea.getCaret();
     caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-
-//    addTempDefaultValues();
+    initializeProgressBars();
   }
 
-  private void addTempDefaultValues() {
-    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV/INV.Birch");
-//    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV/INV.Altisource");
-//    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV/INV.Healthport");
-//    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV/INV.Lancope");
-//    invoiceHomeField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData/INV");
-    reportOutputField.setText("/Users/ahariharan/Documents/ofs/template/SalesReport-TestData");
-    System.setProperty(DROPBOX_HOME, invoiceHomeField.getText());
-    toggleGenerateReportButton();
+  private void initializeProgressBars() {
+    overallReportProgressBar.setStringPainted(true);
+    currentTaskProgress.setStringPainted(true);
+    overallReportProgressBar.setBorderPainted(true);
+    currentTaskProgress.setBorderPainted(true);
   }
 
   private void initializeLogHandler() {
@@ -109,13 +111,9 @@ public class ReportUI extends JFrame {
         log(buffer.toString());
       }
 
-      @Override public void flush() {
+      @Override public void flush() {}
 
-      }
-
-      @Override public void close() throws SecurityException {
-
-      }
+      @Override public void close() throws SecurityException {}
     };
 
     utils.setHandler(handler);
@@ -152,7 +150,11 @@ public class ReportUI extends JFrame {
 
     generateReportButton.addActionListener(new ActionListener() {
       @Override public void actionPerformed(ActionEvent e) {
-        onGenerateReport();
+        try {
+          onGenerateReport();
+        } catch (Exception ex) {
+          log(ex);
+        }
       }
     });
     quitButton.addActionListener(new ActionListener() {
@@ -229,26 +231,22 @@ public class ReportUI extends JFrame {
       JFileChooser outputFileChooser = new JFileChooser();
       outputFileChooser.setDialogTitle("Select Invoice Home Folder Location");
       outputFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-      outputFileChooser.setFileFilter(new FileNameExtensionFilter("Log File", "log"));
+      outputFileChooser.setFileFilter(new FileNameExtensionFilter("CompressedLog File", "zip"));
       if (outputFileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
         location = outputFileChooser.getSelectedFile().getAbsolutePath();
-        if(!location.endsWith(".log")) location = location + ".log";
+        if(!location.endsWith(".zip")) location = location + ".zip";
 
         JOptionPane.showMessageDialog(this, "Log Saved.");
       } else {
         return;
       }
 
-//      ByteArrayOutputStream out = new ByteArrayOutputStream();
-//      GZIPOutputStream gzip = new GZIPOutputStream(out);
-//      gzip.write(str.getBytes());
-//      gzip.close();
-//      str = out.toString("ISO-8859-1");
-//      log(str);
-      FileOutputStream fos = new FileOutputStream(new File(location));
-      fos.write(str.getBytes());
-      fos.flush();
-      fos.close();
+      ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(location ));
+      zipOutputStream.putNextEntry(new ZipEntry(outputFileChooser.getSelectedFile().getName() + ".log"));
+      zipOutputStream.write(str.getBytes());
+      zipOutputStream.flush();
+      zipOutputStream.closeEntry();
+      zipOutputStream.close();
     } catch (Exception ex) {
       log(ex);
       JOptionPane.showMessageDialog(this, "Something went wrong :  when saving log");
@@ -290,66 +288,136 @@ public class ReportUI extends JFrame {
     saveReportAsButton.setEnabled(reportWorkbook != null && generateReportButton.isEnabled());
   }
 
-  private void onGenerateReport() {
-
+  private void onGenerateReport() throws Exception{
     completed = false;
     final ListModel listModel = monthList.getModel();
-    invoiceReader = new ExcelInvoiceReader();
     toggleButtonEnablement();
     SwingWorker<Boolean, Integer> worker = new SwingWorker<Boolean, Integer>() {
 
       @Override
       protected Boolean doInBackground() throws Exception {
         int counter = 0;
-        reportProgressBar.setValue(0);
-        reportProgressBar.setMaximum(monthList.getSelectedIndices().length * 2);
+        overallReportProgressBar.setValue(0);
+        overallReportProgressBar.setMaximum(monthList.getSelectedIndices().length * 2);
         log("I'm working for you to generate the report you requested");
-
-        for(int index : monthList.getSelectedIndices()) {
-          try {
-            reportProgressBar.setStringPainted(true);
-            reportProgressBar.setString("Workign for you...");
-            MONTH month = MONTH.valueOf(listModel.getElementAt(index).toString());
-            int year = Integer.parseInt(yearComboBox.getSelectedItem().toString());
-            Map<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
-            publish(++counter);
-            reportProgressBar.setString("Writing report...");
-            ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts);
-            reportWorkbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
-            if (reportWorkbook != null) {
-              if (reportOutputField.getText().length() > 0) {saveReport(getOutputFile());}
-              toggleSaveReportAsButton();
-            }
-            publish(++counter);
-          } catch (Exception ex) {
-            ex.printStackTrace();
-            log("Something went wrong :  " + ex.getMessage());
-            anyError = true;
+        Task task = new Task() {
+          boolean running;
+          @Override public void add() {
+            int max = currentTaskProgress.getMaximum() + 1;
+            currentTaskProgress.setMaximum(max);
           }
+
+          @Override public void done() {
+            int current = currentTaskProgress.getValue() + 1;
+            currentTaskProgress.setValue(current);
+          }
+
+          @Override public void restart() {
+            currentTaskProgress.setValue(0);
+            currentTaskProgress.setMaximum(0);
+            running = true;
+          }
+
+        };
+
+        invoiceReader = new ExcelInvoiceReader(task);
+        clearLogButton.setEnabled(false);
+        saveLogButton.setEnabled(false);
+        logTextArea.setText("");
+
+        List<Long> reportConstructionDurations = new ArrayList();
+        int numOfMonthsToReport =  monthList.getSelectedIndices().length;
+        overallReportProgressBar.setString("Estimating Duration...");
+        timeTaken = System.currentTimeMillis();
+        for(int i = 0; i <numOfMonthsToReport; i++) {
+          int index = monthList.getSelectedIndices()[i];
+          long duration = System.currentTimeMillis();
+          MONTH month = MONTH.valueOf(listModel.getElementAt(index).toString());
+          int year = Integer.parseInt(yearComboBox.getSelectedItem().toString());
+
+          currentTaskProgress.setString(String.format("Parsing invoices for %s %d...", month.toString(), year));
+          SortedMap<String, ClientAccount> clientAccounts = invoiceReader.parseAllClientInvoice(year, month);
+
+          log("Data read for month " + month.toString() + " is ");
+          log(clientAccounts);
+          ExcelSalesReportWriter reportWriter = new ExcelSalesReportWriter(clientAccounts, task);
+          publish(++counter);
+          currentTaskProgress.setString(String.format("Writing report for %s %d...", month.toString(), year));
+          reportWorkbook = reportWriter.getSalesReport(loadWorkbook(), year, month);
+
+          if (reportWorkbook != null) {
+            if (reportOutputField.getText().length() > 0) {
+              saveReport(getOutputFile());
+            }
+            toggleSaveReportAsButton();
+          }
+
+          publish(++counter);
+          task.restart();
+          duration = System.currentTimeMillis() - duration;
+          reportConstructionDurations.add(duration);
+          long pendingDuration = getAverage(reportConstructionDurations) * (numOfMonthsToReport - i -1);
+          setTimeToComplete(pendingDuration);
         }
 
+        currentTaskProgress.setString("Completed!!!");
+        clearLogButton.setEnabled(true);
+        saveLogButton.setEnabled(true);
         completed = true;
+        timeTaken = System.currentTimeMillis() - timeTaken;
+
+        String totalTimeTaken = String
+                        .format("Total time taken to complete %2d min, %2.2f sec ", getMinutes(timeTaken),
+                                        getSeconds(timeTaken));
+        log(totalTimeTaken);
+        overallReportProgressBar.setString(totalTimeTaken);
         return true;
       }
 
+      private long getAverage(List<Long> values) {
+        long total = 0;
+        for(long value : values) {
+          total += value;
+        }
+        return (total/values.size());
+      }
+
       @Override protected void process(List<Integer> chunks) {
-        reportProgressBar.setValue(chunks.get(0));
+        overallReportProgressBar.setValue(chunks.get(0));
       }
 
       @Override protected void done() {
-        reportProgressBar.setValue(monthList.getSelectedIndices().length * 2);
+        overallReportProgressBar.setValue(monthList.getSelectedIndices().length * 2);
         toggleButtonEnablement();
         toggleSaveReportAsButton();
 
-        String progressMessage = anyError ? "Completed with few errors" : "Woohoo!!! you can save additional copy";
+        String progressMessage = anyError ? "Completed with few errors" : "Hurry!!! Report generated successfully";
         String additional = anyError ? " with few errors" : "";
-        reportProgressBar.setString(progressMessage);
-        JOptionPane.showMessageDialog(reportProgressBar.getRootPane(),
-                        "Woohoo!!! I think i generated the report you asked" + additional
+//        overallReportProgressBar.setString(progressMessage);
+        JOptionPane.showMessageDialog(overallReportProgressBar.getRootPane(),
+                        progressMessage + additional
                                         + ".\nLet me know what you think.");
       }
     };
     worker.execute();
+  }
+
+  private float getSeconds(long duration) {
+    log("In getSeconds " + duration);
+    return TimeUnit.MILLISECONDS.toSeconds(duration) % 60;
+  }
+
+  private int getMinutes(long duration) {
+    log("In getMinutes " + duration);
+    return (int)TimeUnit.MILLISECONDS.toMinutes(duration);
+  }
+
+  public void setTimeToComplete(long duration) {
+    float min = getMinutes(duration);
+    float seconds = getSeconds(duration);
+    overallReportProgressBar.setString(String.format("Approximate time to complete  %2.0f min, %2.2f sec ",
+                    min, seconds));
+    log(String.format("Agv Time taken / monthly report: %2.0f min, %2.2f sec ", min, seconds));
   }
 
   private void saveReport(File file) {
@@ -402,6 +470,7 @@ public class ReportUI extends JFrame {
     homeChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
     if (homeChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
       invoiceHomeField.setText(homeChooser.getSelectedFile().getAbsolutePath());
+      reportOutputField.setText(homeChooser.getSelectedFile().getAbsolutePath());
       System.setProperty(DROPBOX_HOME, invoiceHomeField.getText());
     }
     toggleGenerateReportButton();
